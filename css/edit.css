@@ -1,0 +1,501 @@
+html {
+    background-color: #eeebe3;
+}
+body {
+    position: relative;
+}
+
+#screensaver {
+    text-align: center;
+    padding: 24px 0 0;
+
+    -webkit-animation: fadeIn 2s ease-in;
+    -moz-animation: fadeIn 2s ease-in;
+    animation: fadeIn 2s ease-in;
+}
+#image-wrapper {
+    display: table;
+    margin: 0 auto;
+    position: relative;
+    background: #FFF url('../img/transparent-pattern.png') repeat scroll 0 0;
+
+    -moz-box-shadow:    0 2px 2px rgba(0, 0, 0, 0.3);
+    -webkit-box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+    box-shadow:         0 2px 2px rgba(0, 0, 0, 0.3);
+
+    -webkit-animation: fadeIn .5s ease;
+    -moz-animation: fadeIn .5s ease;
+    animation: fadeIn .5s ease;
+}
+#edit-canvas {
+    display: block;
+}
+
+@-moz-keyframes fadeIn { 0% {opacity: 0;} 100% {opacity: 1;} }
+@-webkit-keyframes fadeIn { 0% {opacity: 0;} 100% {opacity: 1;} }
+@keyframes fadeIn { 0% {opacity: 0;} 100% {opacity: 1;} }
+
+#toolbox {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    padding: 9px;
+    background: #FFFFFF;
+
+    -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+    -moz-box-shadow:    0 0 10px rgba(0, 0, 0, 0.7);
+    box-shadow:         0 0 10px rgba(0, 0, 0, 0.7);
+
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+#toolbox .tool-wrapper {
+    background: #FFFFFF;
+    border-right: 1px solid #FFFFFF;
+}
+#toolbox .tool-wrapper:last-child {
+    border-right: none;
+}
+#toolbox .tool {
+    display: block;
+    line-height: 32px;
+    text-decoration: none;
+    color: #333333;
+    cursor: pointer;
+    background: #FFFFFF no-repeat scroll 50% 50%;
+    background-position: 50% 50%, right bottom;
+    border: none;
+    width: 36px;
+    height: 32px;
+    background-color: #fff;
+
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+#toolbox .tool:hover {
+    background-color: #F0F0F0;
+    text-decoration: none;
+}
+#toolbox .tool.active {
+    -moz-box-shadow:    inset rgba(0,0,0,0.3) 0 0 10px 0;
+    -webkit-box-shadow: inset rgba(0,0,0,0.3) 0 0 10px 0;
+    box-shadow:         inset rgba(0,0,0,0.3) 0 0 10px 0;
+}
+
+/* Drag Tool (begin) */
+#toolbox .handle {
+    width: 36px;
+    background: #FFFFFF url('../img/move_icon.jpg') no-repeat scroll 50% 50%;
+    cursor: move;
+}
+#toolbox .handle:hover {
+    background-color: #FFFFFF;
+}
+/* Drag Tool (end) */
+
+/* Upload Tool (begin) */
+#toolbox .upload-image {
+    background-color: #0c8ac8;
+    background-image: url('../img/tool-upload.png');
+}
+#toolbox .upload-image:hover {
+    background-color: #0c7eb7;
+}
+#toolbox .upload-image-loading {
+    background: #1b7e5a url('../img/ajax-loader.gif') no-repeat scroll 50% 50%;
+}
+#toolbox .upload-image-loading:hover {
+    background-color: #1b7e5a;
+    cursor: default;
+}
+#toolbox .upload-image-error {
+    color: transparent;
+    background: #e76e66;
+}
+#toolbox .upload-image-error:hover {
+    background-color: #e76e66;
+    cursor: default;
+}
+/* Upload Tool (end) */
+
+/* Crop Tool (begin) */
+#toolbox .crop-tool {
+    background-image: url('../img/tool-crop.png');
+}
+#toolbox .crop-tool.ready {
+    background-image: url('../img/ok.png');
+}
+.crop-editor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    overflow: hidden;
+}
+.crop-editor .excluded {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+.crop-editor .included {
+    position: absolute;
+    outline: #777777 dashed 1px;
+    cursor: move;
+}
+
+.crop-editor .included .resize {
+    width: 9px;
+    height: 9px;
+    background: transparent url('../img/drag-point.png') no-repeat scroll 0 0;
+    position: absolute;
+    z-index: 3;
+}
+.crop-editor .included .resize.resize-top {
+    top: -4px;
+    left: calc(50% - 4px);
+    cursor: row-resize;
+}
+.crop-editor .included .resize.resize-top-right {
+    top: -4px;
+    right: -4px;
+    cursor: ne-resize;
+}
+.crop-editor .included .resize.resize-right {
+    top: calc(50% - 4px);
+    right: -4px;
+    cursor: col-resize;
+}
+.crop-editor .included .resize.resize-right-bottom {
+    bottom: -4px;
+    right: -4px;
+    cursor: se-resize;
+}
+.crop-editor .included .resize.resize-bottom {
+    left: calc(50% - 4px);
+    bottom: -4px;
+    cursor: row-resize;
+}
+.crop-editor .included .resize.resize-bottom-left {
+    bottom: -4px;
+    left: -4px;
+    cursor: sw-resize;
+}
+.crop-editor .included .resize.resize-left {
+    top: calc(50% - 4px);
+    left: -4px;
+    cursor: col-resize;
+}
+.crop-editor .included .resize.resize-left-top {
+    top: -4px;
+    left: -4px;
+    cursor: nw-resize;
+}
+.crop-editor .included .info {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    white-space: nowrap;
+    text-align: center;
+    font-family: monospace;
+    color: #FFFFFF;
+    font-size: 10px;
+    padding-top: 5px;
+    z-index: 1;
+}
+/* Crop Tool (end) */
+
+/* Undo Tool (begin) */
+#toolbox .undo-tool {
+    background-image: url('../img/tool-undo.png');
+}
+#toolbox .undo-tool.empty {
+    opacity: 0.3;
+}
+/* Undo Tool (end) */
+
+/* Redo Tool (begin) */
+#toolbox .redo-tool {
+    background-image: url('../img/tool-redo.png');
+}
+#toolbox .redo-tool.empty {
+    opacity: 0.3;
+}
+/* Redo Tool (end) */
+
+/* Brush Tool (begin) */
+#toolbox .brush-tool {
+    background-image: url('../img/tool-brush.png');
+}
+
+.brush-tool-canvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: url('../img/tool-brush-cursor.png') 1 1, auto !important;
+}
+/* Brush Tool (end) */
+
+/* Colors Tool (begin) */
+#toolbox .colors-tool {
+    background-image: url('../img/tool-colors.png');
+    position: relative;
+}
+#toolbox .colors-tool.dark-color {
+    background-image: url('../img/tool-colors-white.png');
+}
+#toolbox .colors-tool input[type="color"] {
+    opacity: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+.colors-tool-canvas {
+    cursor: url('../img/tool-colors-cursor.png') 2 24, auto !important;
+}
+/* Colors Tool (end) */
+
+/* Rectangle Tool (begin) */
+#toolbox .rectangle-tool {
+    background-image: url('../img/tool-rectangle.png'), url('../img/multi-tool-corner.png');
+}
+#toolbox .rectangle-tool.fill {
+    background-image: url('../img/tool-rectangle-fill.png'), url('../img/multi-tool-corner.png');
+}
+
+.rectangle-tool-canvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: crosshair;
+}
+
+.rectangle-edit {
+    position: absolute;
+    width: 0;
+    height: 0;
+    top: -10px;
+    cursor: move;
+}
+.rectangle-edit .resize {
+    width: 9px;
+    height: 9px;
+    background: transparent url('../img/drag-point.png') no-repeat scroll 0 0;
+    position: absolute;
+}
+.rectangle-edit .resize.resize-top {
+    top: -4px;
+    left: calc(50% - 4px);
+    cursor: row-resize;
+}
+.rectangle-edit .resize.resize-top-right {
+    top: -4px;
+    right: -4px;
+    cursor: ne-resize;
+}
+.rectangle-edit .resize.resize-right {
+    top: calc(50% - 4px);
+    right: -4px;
+    cursor: col-resize;
+}
+.rectangle-edit .resize.resize-right-bottom {
+    bottom: -4px;
+    right: -4px;
+    cursor: se-resize;
+}
+.rectangle-edit .resize.resize-bottom {
+    left: calc(50% - 4px);
+    bottom: -4px;
+    cursor: row-resize;
+}
+.rectangle-edit .resize.resize-bottom-left {
+    bottom: -4px;
+    left: -4px;
+    cursor: sw-resize;
+}
+.rectangle-edit .resize.resize-left {
+    top: calc(50% - 4px);
+    left: -4px;
+    cursor: col-resize;
+}
+.rectangle-edit .resize.resize-left-top {
+    top: -4px;
+    left: -4px;
+    cursor: nw-resize;
+}
+/* Rectangle Tool (end) */
+
+/* Line Tool (begin) */
+#toolbox .line-tool {
+    background-image: url('../img/tool-line.png'), url('../img/multi-tool-corner.png');
+}
+#toolbox .line-tool.arrow {
+    background-image: url('../img/tool-arrow.png'), url('../img/multi-tool-corner.png');
+}
+
+.line-tool-canvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: crosshair;
+}
+/* Line Tool (end) */
+
+/* Text Tool (begin) */
+#toolbox .text-tool {
+    background-image: url('../img/tool-text.png');
+}
+#text-tool-cover {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    cursor: text;
+}
+#text-editor {
+    display: block;
+    position: absolute;
+}
+#text-editor textarea {
+    resize: none;
+    border: none;
+    background: none;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 1px dashed transparent;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 16px;
+    font-weight: bold;
+    outline-offset: 0;
+    outline: 0;
+    padding: 2px;
+}
+#text-editor .drag {
+    position: absolute;
+    left: -27px;
+    top: 0;
+    width: 26px;
+    height: 26px;
+    background: transparent url('../img/tool-text-move.png') no-repeat scroll 0 0;
+    cursor: move;
+}
+/* Text Tool (end) */
+
+/* Save Tool (begin) */
+#toolbox .save-to-disk {
+    background-image: url('../img/save-to-disk.png');
+}
+/* Save Tool (end) */
+
+/* capture attention animation */
+.capture-attention-animation {
+    display: inline-block;
+    -webkit-transform-origin: center center;
+    -ms-transform-origin: center center;
+    transform-origin: center center;
+
+    -webkit-animation-name: capture-attention-animation;
+    -ms-animation-name: capture-attention-animation;
+    animation-name: capture-attention-animation;
+
+    -webkit-animation-duration: 1s;
+    -ms-animation-duration: 1s;
+    animation-duration: 1s;
+
+    -webkit-animation-timing-function: ease-in-out;
+    -ms-animation-timing-function: ease-in-out;
+    animation-timing-function: ease-in-out;
+
+    -webkit-animation-delay: 0s;
+    -ms-animation-delay: 0s;
+    animation-delay: 0s;
+
+    -webkit-animation-play-state: running;
+    -ms-animation-play-state: running;
+    animation-play-state: running;
+
+    -webkit-backface-visibility: visible;
+    backface-visibility: visible;
+}
+
+@-webkit-keyframes capture-attention-animation {
+    0% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, 90deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, 90deg);
+        -webkit-transition-timing-function: ease-in;
+        transition-timing-function: ease-in;
+        opacity: 0;
+    }
+
+    40% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, -20deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, -20deg);
+        -webkit-transition-timing-function: ease-in;
+        transition-timing-function: ease-in;
+    }
+
+    60% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, 10deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, 10deg);
+        opacity: 1;
+    }
+
+    80% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, -5deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, -5deg);
+    }
+
+    100% {
+        -webkit-transform: perspective(400px);
+        transform: perspective(400px);
+    }
+}
+
+@keyframes capture-attention-animation {
+    0% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, 90deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, 90deg);
+        -webkit-transition-timing-function: ease-in;
+        transition-timing-function: ease-in;
+        opacity: 0;
+    }
+
+    40% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, -20deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, -20deg);
+        -webkit-transition-timing-function: ease-in;
+        transition-timing-function: ease-in;
+    }
+
+    60% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, 10deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, 10deg);
+        opacity: 1;
+    }
+
+    80% {
+        -webkit-transform: perspective(400px) rotate3d(0, 1, 0, -5deg);
+        transform: perspective(400px) rotate3d(0, 1, 0, -5deg);
+    }
+
+    100% {
+        -webkit-transform: perspective(400px);
+        transform: perspective(400px);
+    }
+}
+
+/* ^ capture attention animation */
