@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "StaticShot - Screenshot Capture & Annotate",
     "description": "Capturează pagini, redactează și încarcă imagini pe Static.md",
-    "version": "1.10.1",
+    "version": "1.10.2",
     "background": {
         "scripts": ["js/background.js"]
     },

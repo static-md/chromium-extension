@@ -682,7 +682,7 @@ window.addEvent('domready', function()
                                 });
 
                                 setTimeout(function(){
-                                    window.location.replace(response.page);
+                                    window.location.replace(response.page +'#~');
                                 }, 1000);
                             }
                         });
