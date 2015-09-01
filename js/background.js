@@ -88,7 +88,7 @@ new (function()
         this.openEditorTab = function()
         {
             chrome.tabs.create({
-                url: chrome.extension.getURL("edit.html"),
+                url: chrome.extension.getURL('edit.html'),
                 selected: true
             });
         };

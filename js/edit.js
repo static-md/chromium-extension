@@ -8,6 +8,20 @@ window.addEvent('domready', function()
         function sendMessage(r) {
             chrome.extension.sendMessage(r);
         }
+
+        function isRetinaDisplay() {
+            if (window.matchMedia) {
+                var mq = window.matchMedia(
+                    'only screen and (min--moz-device-pixel-ratio: 1.3), '+
+                    'only screen and (-o-min-device-pixel-ratio: 2.6/2), '+
+                    'only screen and (-webkit-min-device-pixel-ratio: 1.3), '+
+                    'only screen and (min-device-pixel-ratio: 1.3), '+
+                    'only screen and (min-resolution: 1.3dppx)'
+                );
+
+                return (mq && mq.matches || (window.devicePixelRatio > 1));
+            }
+        }
     }
 
     function start_editor() {
@@ -30,15 +44,30 @@ window.addEvent('domready', function()
 
                 pic.onload = function()
                 {
-                    var imgWidth = this.naturalWidth, imgHeight = this.naturalHeight;
+                    var imgWidth = this.naturalWidth,
+                        imgHeight = this.naturalHeight,
+                        isRetina = isRetinaDisplay();
 
-                    $canvas.setProperty('width', imgWidth);
-                    $canvas.setProperty('height', imgHeight);
+                    if (isRetina) {
+                        var fixedWidth = Math.floor(imgWidth / 2),
+                            fixedHeight = Math.floor(imgHeight / 2);
 
-                    that.width  = imgWidth;
-                    that.height = imgHeight;
+                        $canvas.setProperty('width', fixedWidth);
+                        $canvas.setProperty('height', fixedHeight);
 
-                    ctx.drawImage(pic, 0, 0, imgWidth, imgHeight);
+                        that.width  = fixedWidth;
+                        that.height = fixedHeight;
+
+                        ctx.drawImage(pic, 0, 0, fixedWidth, fixedHeight);
+                    } else {
+                        $canvas.setProperty('width', imgWidth);
+                        $canvas.setProperty('height', imgHeight);
+
+                        that.width  = imgWidth;
+                        that.height = imgHeight;
+
+                        ctx.drawImage(pic, 0, 0, imgWidth, imgHeight);
+                    }
 
                     pic = undefined;
 
@@ -331,7 +360,7 @@ window.addEvent('domready', function()
 
                     this.name = 'drag';
 
-                    this.$element = Elements.from('<div class="tool handle" title="Mișcă intrumentele"></div>')[0];
+                    this.$element = Elements.from('<div class="tool handle" title="Move the toolbar"></div>')[0];
                 },
                 init: function()
                 {
@@ -430,7 +459,7 @@ window.addEvent('domready', function()
                     this.notAllowedForAutoReactivation = ['undo', 'redo', 'upload', 'drag', 'crop', 'save'];
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool save-to-disk" title="Salvează în calculator"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool save-to-disk" title="Download"></a>')[0];
                 },
                 init: function(){
                     var that = this;
@@ -492,7 +521,7 @@ window.addEvent('domready', function()
                     this.name = 'upload';
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool upload-image" title="Încarcă imaginea"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool upload-image" title="Upload"></a>')[0];
 
                     /** timeout to remove error */
                     this.errorTimeoutId = 0;
@@ -760,7 +789,7 @@ window.addEvent('domready', function()
                     var that = this;
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool crop-tool" title="Decupare"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool crop-tool" title="Crop"></a>')[0];
                     /** DOM reference, store all edit crop size divs */
                     this.$crop = Elements.from(
                         '<div class="crop-editor">'+
@@ -1440,7 +1469,7 @@ window.addEvent('domready', function()
                     } */
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool undo-tool" title="Anulare"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool undo-tool" title="Undo"></a>')[0];
                 },
                 init: function()
                 {
@@ -1558,7 +1587,7 @@ window.addEvent('domready', function()
                     this.saves = [];
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool redo-tool" title="Refacere"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool redo-tool" title="Redo"></a>')[0];
                 },
                 init: function()
                 {
@@ -1681,7 +1710,7 @@ window.addEvent('domready', function()
                     this.saves = [];
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool brush-tool" title="Pensulă"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool brush-tool" title="Brush"></a>')[0];
                     /** where brush will paint on */
                     this.$canvas  = Elements.from('<canvas class="brush-tool-canvas"></canvas>')[0];
                     /** canvas draw context */
@@ -1824,7 +1853,7 @@ window.addEvent('domready', function()
                     this.currentColorIsDark = null;
 
                     /** DOM reference */
-                    this.$element = Elements.from('<div class="tool colors-tool" ><input type="color" title="Shimbă culoarea" /></div>')[0];
+                    this.$element = Elements.from('<div class="tool colors-tool" ><input type="color" title="Color" /></div>')[0];
 
                     this.$elements = {
                         inputColor: this.$element.getElement('input[type="color"]')
@@ -1940,7 +1969,7 @@ window.addEvent('domready', function()
                     var that = this;
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool line-tool arrow" title="Săgeată / Linie"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool line-tool arrow" title="Arrow / Line"></a>')[0];
                     /** DOM reference */
                     this.$canvas  = Elements.from('<canvas class="line-tool-canvas"></canvas>')[0];
                     /** canvas draw context */
@@ -2178,7 +2207,7 @@ window.addEvent('domready', function()
                     this.name = 'rectangle';
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool rectangle-tool" title="Dreptungi"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool rectangle-tool" title="Rectangle"></a>')[0];
                     /** DOM reference */
                     this.$canvas = Elements.from('<canvas class="rectangle-tool-canvas"></canvas>')[0];
                     /** canvas draw context */
