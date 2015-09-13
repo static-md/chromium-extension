@@ -1806,6 +1806,7 @@ window.addEvent('domready', function()
                         this.ctx.lineWidth   = this.toolbox.data.lineWidth;
                         this.ctx.strokeStyle = this.toolbox.data.color;
                         this.ctx.lineCap     = 'round';
+                        this.ctx.lineJoin    = 'round';
                     }
                 },
                 /** process mouse move */
