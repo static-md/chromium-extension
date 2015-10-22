@@ -172,6 +172,12 @@ new (function()
                 this.currentEntireCaptureData.viewportHeight    = m.page.vieportSize.y;
                 this.currentEntireCaptureData.currentScrollTop  = m.page.scroll.top;
 
+                if (this.isRetinaDisplay()) {
+                    this.currentEntireCaptureData.pageHeight *= 2;
+                    this.currentEntireCaptureData.viewportWidth *= 2;
+                    this.currentEntireCaptureData.viewportHeight *= 2;
+                }
+
                 // resize canvas to entire page size
                 this.currentEntireCaptureData.canvas.height = this.currentEntireCaptureData.pageHeight;
                 this.currentEntireCaptureData.canvas.width  = this.currentEntireCaptureData.viewportWidth;
@@ -211,7 +217,11 @@ new (function()
 
             this.entireCaptureHelperImageOnLoad = function()
             {
-                that.currentEntireCaptureData.canvas.getContext('2d').drawImage(that.entireCaptureHelperImage, 0, top);
+                that.currentEntireCaptureData.canvas.getContext('2d').drawImage(
+                    that.entireCaptureHelperImage,
+                    0,
+                    that.isRetinaDisplay() ? (top * 2) : top
+                );
 
                 customCallback();
             };
@@ -233,6 +243,21 @@ new (function()
 
             that.openEditorTab();
         };
+
+        this.isRetinaDisplay = function()
+        {
+            if (window.matchMedia) {
+                var mq = window.matchMedia(
+                    'only screen and (min--moz-device-pixel-ratio: 1.3), '+
+                    'only screen and (-o-min-device-pixel-ratio: 2.6/2), '+
+                    'only screen and (-webkit-min-device-pixel-ratio: 1.3), '+
+                    'only screen and (min-device-pixel-ratio: 1.3), '+
+                    'only screen and (min-resolution: 1.3dppx)'
+                );
+
+                return (mq && mq.matches || (window.devicePixelRatio > 1));
+            }
+        }
     }
 
     var that = this;
