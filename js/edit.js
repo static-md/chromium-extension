@@ -132,11 +132,6 @@ window.addEvent('domready', function()
                         e.event.preventDefault();
                     });
 
-                    // banner img is loaded later and it changes toolbox position
-                    this.$element.getElement('#banner img').addEvent('load', function(e){
-                        that.resetPosition();
-                    });
-
                     // prevent dblclick on window
                     this.$element.addEvent('dblclick', function(e){
                         e.event.stopPropagation();
