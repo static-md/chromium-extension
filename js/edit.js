@@ -165,10 +165,6 @@ window.addEvent('domready', function()
             {
                 return ''+
                 '<div id="toolbox">'+
-                    '<a id="banner" target="_blank" '+
-                        'href="data:text/html;charset=utf-8;base64,PGh0bWw+PGhlYWQ+PG1ldGEgaHR0cC1lcXVpdj0icmVmcmVzaCIgY29udGVudD0iMDsgdXJsPWh0dHBzOi8vd3d3LmJsdWVob3N0LmNvbS90cmFjay9tb2xkY3JhZnQvc3RhdGljc2hvdCIgLz48L2hlYWQ+PC9odG1sPg==" >'+
-                        '<img border="0" src="https://bluehost-cdn.com/media/partner/images/moldcraft/468x60/bh-ppc-banners-dynamic-468x60.png">'+
-                    '</a>'+
                     '<table border="0" cellpadding="0" cellspacing="0">'+
                         '<tr class="tools-wrapper"></tr>'+
                     '</table>'+
