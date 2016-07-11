@@ -55,9 +55,6 @@ body {
     margin-left: auto;
     margin-right: auto;
 }
-#toolbox > #banner > img {
-    margin-bottom: 7px;
-}
 #toolbox .tool-wrapper {
     background: #FFFFFF;
     border-right: 1px solid #FFFFFF;
