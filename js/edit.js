@@ -1,7 +1,7 @@
 window.addEvent('domready', function()
 {
     /** image */
-    var dataUrl = '';
+    var dataUrl = '', ratio = 1;
 
     /* functions */
     {
@@ -90,14 +90,12 @@ window.addEvent('domready', function()
 
                 this.width  = 0;
                 this.height = 0;
-                this.ratio = 1;
 
                 this.prepare();
             },
             prepare: function()
             {
                 var $canvas = this.$element,
-                    ctx     = $canvas.getContext('2d'),
                     pic     = new Image(),
                     that    = this;
 
@@ -106,19 +104,18 @@ window.addEvent('domready', function()
                     $canvas.setProperty('width', this.naturalWidth);
                     $canvas.setProperty('height', this.naturalHeight);
 
-                    that.ratio = drawImage({
+                    ratio = drawImage({
                         image: pic,
                         canvas: $canvas
                     });
 
-                    ctx.scale(that.ratio, that.ratio);
-
-                    that.width  = $canvas.getProperty('width');
-                    that.height = $canvas.getProperty('height');
+                    $canvas.getContext('2d').scale(1, 1);
 
                     pic = undefined;
 
                     $canvas.getParent().setStyle('display', '');
+
+                    that.update();
 
                     main();
                 };
@@ -127,8 +124,19 @@ window.addEvent('domready', function()
             },
             update: function()
             {
-                this.width  = parseInt(this.$element.getProperty('width'));
-                this.height = parseInt(this.$element.getProperty('height'));
+                this.width  = parseInt(this.$element.style.width || this.$element.getProperty('width'));
+                this.height = parseInt(this.$element.style.height || this.$element.getProperty('height'));
+            },
+            setSize: function (width, height) {
+                this.$element.setProperties({
+                    'width': width * ratio,
+                    'height': height * ratio
+                });
+
+                this.$element.style.width = width +'px';
+                this.$element.style.height = height +'px';
+
+                this.update();
             }
         });
 
@@ -1205,29 +1213,24 @@ window.addEvent('domready', function()
                         });
                     }
 
-                    var $canvas     = this.toolbox.canvas.$element;
-                    var ctx         = $canvas.getContext('2d');
-                    var image       = new Image();
+                    var canvas = this.toolbox.canvas,
+                        image = new Image(),
+                        ctx = canvas.$element.getContext('2d');
 
                     image.onload = function()
                     {
                         {
-                            $canvas.setProperties({
-                                height: cropSize.height,
-                                width:  cropSize.width
-                            });
-
-                            that.toolbox.canvas.update();
+                            canvas.setSize(cropSize.width, cropSize.height);
 
                             that.reset();
                         }
 
-                        ctx.drawImage(image, -drawOffset.x, -drawOffset.y);
+                        ctx.drawImage(image, -drawOffset.x * ratio, -drawOffset.y * ratio);
 
                         image = undefined;
                     };
 
-                    image.src = $canvas.toDataURL('image/png');
+                    image.src = canvas.$element.toDataURL('image/png');
                 },
                 /** process mouse down resize */
                 handleResizeMouseDown: function(e)
@@ -1577,24 +1580,17 @@ window.addEvent('domready', function()
                         return false;
                     }
 
-                    var that = this;
-
                     this.toolbox.$eventBox.fireEvent('beginUndo');
 
-                    var save        = this.saves.pop();
-                    var $canvas     = this.toolbox.canvas.$element;
-                    var ctx         = $canvas.getContext('2d');
-                    var image       = new Image();
+                    var save   = this.saves.pop(),
+                        canvas = this.toolbox.canvas,
+                        image  = new Image(),
+                        ctx    = canvas.$element.getContext('2d');
 
                     image.onload = function()
                     {
                         {
-                            $canvas.setProperties({
-                                height: save.dimension.height,
-                                width:  save.dimension.width
-                            });
-
-                            that.toolbox.canvas.update();
+                            canvas.setSize(save.dimension.width, save.dimension.height);
 
                             save = undefined;
                         }
@@ -1709,24 +1705,17 @@ window.addEvent('domready', function()
                         return false;
                     }
 
-                    var that = this;
-
                     this.toolbox.$eventBox.fireEvent('beginRedo');
 
-                    var save        = this.saves.pop();
-                    var $canvas     = this.toolbox.canvas.$element;
-                    var ctx         = $canvas.getContext('2d');
-                    var image       = new Image();
+                    var save   = this.saves.pop(),
+                        canvas = this.toolbox.canvas,
+                        image  = new Image(),
+                        ctx    = canvas.$element.getContext('2d');
 
                     image.onload = function()
                     {
                         {
-                            $canvas.setProperties({
-                                height: save.dimension.height,
-                                width:  save.dimension.width
-                            });
-
-                            that.toolbox.canvas.update();
+                            canvas.setSize(save.dimension.width, save.dimension.height);
 
                             save = undefined;
                         }
@@ -1885,7 +1874,7 @@ window.addEvent('domready', function()
 
                     this.toolbox.$eventBox.fireEvent('beginChange');
 
-                    this.toolbox.canvas.$element.getContext('2d').drawImage(this.$canvas, 0, 0);
+                    this.toolbox.canvas.$element.getContext('2d').drawImage(this.$canvas, 0, 0, this.$canvas.width * ratio, this.$canvas.height * ratio);
 
                     this.reset();
                 }
@@ -2140,7 +2129,7 @@ window.addEvent('domready', function()
 
                     this.toolbox.$eventBox.fireEvent('beginChange');
 
-                    this.toolbox.canvas.$element.getContext('2d').drawImage(this.$canvas, 0, 0);
+                    this.toolbox.canvas.$element.getContext('2d').drawImage(this.$canvas, 0, 0, this.$canvas.width * ratio, this.$canvas.height * ratio);
 
                     this.reset();
                 },
@@ -2466,7 +2455,7 @@ window.addEvent('domready', function()
 
                     this.toolbox.$eventBox.fireEvent('beginChange');
 
-                    this.toolbox.canvas.$element.getContext('2d').drawImage(this.$canvas, 0, 0);
+                    this.toolbox.canvas.$element.getContext('2d').drawImage(this.$canvas, 0, 0, this.$canvas.width * ratio, this.$canvas.height * ratio);
 
                     this.reset();
                 },
@@ -2885,19 +2874,19 @@ window.addEvent('domready', function()
 
                     var pos  = {
                         x: parseInt(this.$editor.getStyle('left')) + 3,
-                        y: parseInt(this.$editor.getStyle('top')) + 16
+                        y: parseInt(this.$editor.getStyle('top')) + 15
                     };
 
                     this.toolbox.$eventBox.fireEvent('beginChange');
 
-                    this.ctx.font = "bold 14px monospace";
-                    var lineHeight = 16;
+                    this.ctx.font = "bold "+ (14 * ratio) +"px monospace";
 
-                    var that = this;
+                    var that = this,
+                        lineHeight = 16,
+                        count = 0;
 
-                    var count = 0;
                     Array.each(text.split("\n"), function(line){
-                        that.ctx.fillText(line, pos.x, pos.y + (count * lineHeight));
+                        that.ctx.fillText(line, pos.x * ratio, (pos.y + (count * lineHeight)) * ratio);
                         count++;
                     });
                 },
