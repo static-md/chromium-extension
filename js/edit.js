@@ -9,18 +9,76 @@ window.addEvent('domready', function()
             chrome.extension.sendMessage(r);
         }
 
-        function isRetinaDisplay() {
-            if (window.matchMedia) {
-                var mq = window.matchMedia(
-                    'only screen and (min--moz-device-pixel-ratio: 1.3), '+
-                    'only screen and (-o-min-device-pixel-ratio: 2.6/2), '+
-                    'only screen and (-webkit-min-device-pixel-ratio: 1.3), '+
-                    'only screen and (min-device-pixel-ratio: 1.3), '+
-                    'only screen and (min-resolution: 1.3dppx)'
-                );
-
-                return (mq && mq.matches || (window.devicePixelRatio > 1));
+        /**
+         * Writes an image into a canvas taking into
+         * account the backing store pixel ratio and
+         * the device pixel ratio.
+         *
+         * @author Paul Lewis
+         * @source With minor changes http://www.html5rocks.com/en/tutorials/canvas/hidpi/
+         * @param {Object} opts The params for drawing an image to the canvas
+         */
+        function drawImage(opts) {
+            if ( ! opts.canvas ) {
+                throw("A canvas is required");
             }
+            if ( ! opts.image ) {
+                throw("Image is required");
+            }
+
+            // get the canvas and context
+            var canvas = opts.canvas,
+                context = canvas.getContext('2d'),
+                image = opts.image,
+
+                // now default all the dimension info
+                srcx = opts.srcx || 0,
+                srcy = opts.srcy || 0,
+                srcw = opts.srcw || image.naturalWidth,
+                srch = opts.srch || image.naturalHeight,
+                desx = opts.desx || srcx,
+                desy = opts.desy || srcy,
+                desw = opts.desw || srcw,
+                desh = opts.desh || srch,
+                auto = opts.auto,
+
+                // finally query the various pixel ratios
+                devicePixelRatio = window.devicePixelRatio || 1,
+                backingStoreRatio = context.webkitBackingStorePixelRatio ||
+                    context.mozBackingStorePixelRatio ||
+                    context.msBackingStorePixelRatio ||
+                    context.oBackingStorePixelRatio ||
+                    context.backingStorePixelRatio || 1,
+
+                ratio = devicePixelRatio / backingStoreRatio;
+
+            // ensure we have a value set for auto.
+            // If auto is set to false then we
+            // will simply not upscale the canvas
+            // and the default behaviour will be maintained
+            if (typeof auto === 'undefined') {
+                auto = true;
+            }
+
+            // upscale the canvas if the two ratios don't match
+            if (auto && devicePixelRatio !== backingStoreRatio) {
+
+                var oldWidth = canvas.width;
+                var oldHeight = canvas.height;
+                var r = canvas.width / oldWidth;
+
+                canvas.style.width = (oldWidth / ratio) + 'px';
+                canvas.style.height = (oldHeight / ratio) + 'px';
+
+                // now scale the context to counter
+                // the fact that we've manually scaled
+                // our canvas element
+                context.scale(r, r);
+            }
+
+            context.drawImage(image, srcx, srcy, srcw, srch, desx, desy, desw, desh);
+
+            return ratio;
         }
     }
 
@@ -32,6 +90,7 @@ window.addEvent('domready', function()
 
                 this.width  = 0;
                 this.height = 0;
+                this.ratio = 1;
 
                 this.prepare();
             },
@@ -44,32 +103,18 @@ window.addEvent('domready', function()
 
                 pic.onload = function()
                 {
-                    var imgWidth = this.naturalWidth,
-                        imgHeight = this.naturalHeight,
-                        isRetina = isRetinaDisplay();
+                    $canvas.setProperty('width', this.naturalWidth);
+                    $canvas.setProperty('height', this.naturalHeight);
 
-                    if (isRetina) {
-                        $canvas.setProperty('width', Math.floor(imgWidth / 2));
-                        $canvas.setProperty('height', Math.floor(imgHeight / 2));
+                    that.ratio = drawImage({
+                        image: pic,
+                        canvas: $canvas
+                    });
 
-                        // http://sourcebox.io/2ff7ea7f4fb03dde996c8194a1599b23/html
-                        {
-                            ctx.scale(0.5, 0.5);
-                            ctx.drawImage(pic, 0, 0);
-                            ctx.scale(2, 2); // restore 1x1 scale
-                        }
+                    ctx.scale(that.ratio, that.ratio);
 
-                        that.width  = $canvas.getProperty('width');
-                        that.height = $canvas.getProperty('height');
-                    } else {
-                        $canvas.setProperty('width', imgWidth);
-                        $canvas.setProperty('height', imgHeight);
-
-                        that.width  = imgWidth;
-                        that.height = imgHeight;
-
-                        ctx.drawImage(pic, 0, 0);
-                    }
+                    that.width  = $canvas.getProperty('width');
+                    that.height = $canvas.getProperty('height');
 
                     pic = undefined;
 
