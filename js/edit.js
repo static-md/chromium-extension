@@ -1959,7 +1959,7 @@ window.addEvent('domready', function()
                     var x = e.event.pageX - coordinates.left;
                     var y = e.event.pageY - coordinates.top;
 
-                    var c = this.toolbox.canvas.$element.getContext('2d').getImageData(x, y, 1, 1).data;
+                    var c = this.toolbox.canvas.$element.getContext('2d').getImageData(x * ratio, y * ratio, 1, 1).data;
 
                     this.toolbox.data.color = this.$elements.inputColor.value = this.rgbToHex(c[0], c[1], c[2]);
                     this.updateFrontend();
@@ -2874,7 +2874,7 @@ window.addEvent('domready', function()
 
                     var pos  = {
                         x: parseInt(this.$editor.getStyle('left')) + 3,
-                        y: parseInt(this.$editor.getStyle('top')) + 15
+                        y: parseInt(this.$editor.getStyle('top')) + 15 + parseInt(1 / ratio)
                     };
 
                     this.toolbox.$eventBox.fireEvent('beginChange');
