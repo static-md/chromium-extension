@@ -2933,7 +2933,7 @@ window.addEvent('domready', function()
             toolbox.addTool(new Tools.Undo());
             toolbox.addTool(new Tools.Redo());
             toolbox.addTool(new Tools.Save());
-            toolbox.addTool(new Tools.Upload());
+            //toolbox.addTool(new Tools.Upload()); // the site is closing
 
             toolbox.init();
         }
