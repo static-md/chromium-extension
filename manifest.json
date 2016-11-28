@@ -3,7 +3,7 @@
     "name": "StaticShot - Screenshot Capture & Annotate",
     "short_name": "StaticShot",
     "description": "Capture pages, edit and upload images to Static.md",
-    "version": "1.10.9",
+    "version": "1.10.10",
     "background": {
         "scripts": ["js/background.js"]
     },

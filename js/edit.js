@@ -766,7 +766,7 @@ window.addEvent('domready', function()
                                 });
 
                                 setTimeout(function(){
-                                    window.location.replace(response.page +'#~');
+                                    window.location.replace((response.page || response.image));
                                 }, 1000);
                             }
                         });
@@ -2933,7 +2933,7 @@ window.addEvent('domready', function()
             toolbox.addTool(new Tools.Undo());
             toolbox.addTool(new Tools.Redo());
             toolbox.addTool(new Tools.Save());
-            //toolbox.addTool(new Tools.Upload()); // the site is closing
+            toolbox.addTool(new Tools.Upload()); 
 
             toolbox.init();
         }
