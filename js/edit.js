@@ -173,7 +173,7 @@ window.addEvent('domready', function()
                 /** storage for others */
                 this.data = {
                     color: '#FF0000',
-                    lineWidth: 4
+                    lineWidth: Math.ceil(4 / ratio)
                 };
 
                 /** prepares */
@@ -1031,10 +1031,10 @@ window.addEvent('domready', function()
                 /** process mouse move */
                 handleMouseMove: function(e)
                 {
-                    this.mouseRealEnd.x += e.event.movementX;
-                    this.mouse.end.x    = this.mouseRealEnd.x;
-                    this.mouseRealEnd.y += e.event.movementY;
-                    this.mouse.end.y    = this.mouseRealEnd.y;
+                    var coordinates = this.$crop.getCoordinates();
+
+                    this.mouse.end.x = this.mouseRealEnd.x = e.event.pageX - coordinates.left;
+                    this.mouse.end.y = this.mouseRealEnd.y = e.event.pageY - coordinates.top;
 
                     this.fixMouse();
                     this.prepareCrop();
@@ -1371,11 +1371,13 @@ window.addEvent('domready', function()
                 /** process mouse move resize */
                 handleResizeMouseMove: function(e)
                 {
-                    this.mouseRealEnd.x += e.event.movementX;
+                    var coordinates = this.$crop.getCoordinates();
+
+                    this.mouseRealEnd.x = e.event.pageX - coordinates.left;
                     if (this.resizeMode.left || this.resizeMode.right) {
                         this.mouse.end.x = this.mouseRealEnd.x;
                     }
-                    this.mouseRealEnd.y += e.event.movementY;
+                    this.mouseRealEnd.y = e.event.pageY - coordinates.top;
                     if (this.resizeMode.top || this.resizeMode.bottom) {
                         this.mouse.end.y = this.mouseRealEnd.y;
                     }
@@ -1454,7 +1456,6 @@ window.addEvent('domready', function()
                     this.mouse.begin.y  -= yDiff;
                     this.mouse.end.y = this.mouseRealEnd.y;
 
-                    this.fixMouse();
                     this.prepareCrop();
                     this.drawCropEditor(true);
                 },
@@ -1850,8 +1851,9 @@ window.addEvent('domready', function()
 
                     var mousex = Object.clone(this.mouse);
 
-                    this.mouse.x += e.event.movementX;
-                    this.mouse.y += e.event.movementY;
+                    var coordinates = this.$canvas.getCoordinates();
+                    this.mouse.x = e.event.pageX - coordinates.left;
+                    this.mouse.y = e.event.pageY - coordinates.top;
 
                     this.ctx.beginPath();
 
@@ -2112,8 +2114,10 @@ window.addEvent('domready', function()
                 /** process mouse move */
                 handleMouseMove: function(e)
                 {
-                    this.mouse.end.x += e.event.movementX;
-                    this.mouse.end.y += e.event.movementY;
+                    var coordinates = this.$canvas.getCoordinates();
+
+                    this.mouse.end.x = e.event.pageX - coordinates.left;
+                    this.mouse.end.y = e.event.pageY - coordinates.top;
 
                     this.mouseMoved = true;
 
@@ -2427,8 +2431,10 @@ window.addEvent('domready', function()
                 /** process mouse move */
                 handleMouseMove: function(e)
                 {
-                    this.mouse.end.x += e.event.movementX;
-                    this.mouse.end.y += e.event.movementY;
+                    var coordinates = this.$canvas.getCoordinates();
+
+                    this.mouse.end.x = e.event.pageX - coordinates.left;
+                    this.mouse.end.y = e.event.pageY - coordinates.top;
 
                     if (!this.mouseMoved) {
                         this.$edit.setStyle('display', '');
@@ -2580,18 +2586,19 @@ window.addEvent('domready', function()
                 /** process mouse move resize */
                 handleResizeMouseMove: function(e)
                 {
-                    // fixme: maybe get real mouse coordinates instead of += -= (also in crop)
+                    var coordinates = this.$canvas.getCoordinates();
+
                     if (this.resizeMode.left) {
-                        this.mouse.begin.x += e.event.movementX;
+                        this.mouse.begin.x = e.event.pageX - coordinates.left;
                     }
                     if (this.resizeMode.right) {
-                        this.mouse.end.x += e.event.movementX;
+                        this.mouse.end.x = e.event.pageX - coordinates.left;
                     }
                     if (this.resizeMode.top) {
-                        this.mouse.begin.y += e.event.movementY;
+                        this.mouse.begin.y = e.event.pageY - coordinates.top;
                     }
                     if (this.resizeMode.bottom) {
-                        this.mouse.end.y += e.event.movementY;
+                        this.mouse.end.y = e.event.pageY - coordinates.top;
                     }
 
                     this.drawRectangle();
