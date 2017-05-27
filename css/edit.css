@@ -102,18 +102,32 @@ body {
 
 /* Upload Tool (begin) */
 #toolbox .upload-image {
-    background-color: #0c8ac8;
-    background-image: url('../img/tool-upload.png');
+    width: 32px; /* must be square */
+    position: relative;
 }
 #toolbox .upload-image:hover {
-    background-color: #0c7eb7;
+    background-color: transparent;
+}
+#toolbox .upload-image:before {
+    content: " ";
+    border: 5px solid white;
+    display: block;
+    box-sizing: border-box;
+    height: 100%;
+    border-color: #0C89C8 #0C89C8 #1A7D59 #E76D65;
+    border-radius: 100%;
+    transition: transform .2s ease-in-out;
+}
+#toolbox .upload-image:hover:before {
+    transform: scale(1.25);
 }
 #toolbox .upload-image-loading {
-    background: #1b7e5a url('../img/ajax-loader.gif') no-repeat scroll 50% 50%;
+    -webkit-animation:spin 4s linear infinite;
+    -moz-animation:spin 4s linear infinite;
+    animation:spin 4s linear infinite;
 }
 #toolbox .upload-image-loading:hover {
-    background-color: #1b7e5a;
-    cursor: default;
+    cursor: not-allowed;
 }
 #toolbox .upload-image-error {
     color: transparent;
@@ -503,3 +517,26 @@ body {
 }
 
 /* ^ capture attention animation */
+
+/* rotate animation */
+
+@-moz-keyframes spin {
+    100% {
+        -moz-transform: rotate(360deg);
+    }
+}
+
+@-webkit-keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+/* ^ rotate animation */
