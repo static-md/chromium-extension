@@ -1,7 +1,7 @@
 window.addEvent('domready', function()
 {
     /** image */
-    var dataUrl = '', ratio = 1;
+    var imageObjectUrl = '', ratio = 1;
 
     /* functions */
     {
@@ -120,7 +120,7 @@ window.addEvent('domready', function()
                     main();
                 };
 
-                pic.src = dataUrl;
+                pic.src = imageObjectUrl;
             },
             update: function()
             {
@@ -2962,14 +2962,14 @@ window.addEvent('domready', function()
                     return;
                 }
 
-                if (!m.dataUrl) {
+                if (!m.imageObjectUrl) {
                     $$('#image-wrapper').setStyle('display', 'none');
                     return false;
                 } else {
                     $$('#screensaver').setStyle('display', 'none');
                     $$('#image-wrapper').setStyle('display', '');
 
-                    dataUrl = m.dataUrl;
+                    imageObjectUrl = m.imageObjectUrl;
                     start_editor();
                 }
 
