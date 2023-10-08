@@ -742,7 +742,7 @@ window.addEvent('domready', function()
 
                     this.$element.addEvent('click', function(e) {
                         if (that.toolbox.blocked) {
-                            console.log ('Vă rugăm așteptați finisarea operațiunii curente');
+                            console.log('Please wait the current operation to finish');
                             return false;
                         }
 
@@ -750,26 +750,26 @@ window.addEvent('domready', function()
                         that.toolbox.blocked = true;
                         that.toggleLoading(true);
 
-                        APIv2.upload({
-                            image: that.dataUrlToBlob(
-                                that.toolbox.canvas.$element.toDataURL('image/png')
-                            ),
-                            onError: function(message) {
-                                that.toggleLoading(false);
-                                that.toggleError(message);
+                        that.toolbox.canvas.$element.toBlob(function (blob) {
+                            APIv2.upload({
+                                image: blob,
+                                onError: function(message) {
+                                    that.toggleLoading(false);
+                                    that.toggleError(message);
 
-                                that.toolbox.blocked = false;
-                            },
-                            onSuccess: function(response) {
-                                sendMessage({
-                                    cmd: 'bg:delete_capture'
-                                });
+                                    that.toolbox.blocked = false;
+                                },
+                                onSuccess: function(response) {
+                                    sendMessage({
+                                        cmd: 'bg:delete_capture'
+                                    });
 
-                                setTimeout(function(){
-                                    window.location.replace((response.page || response.image));
-                                }, 1000);
-                            }
-                        });
+                                    setTimeout(function(){
+                                        window.location.replace((response.page || response.image));
+                                    }, 0);
+                                }
+                            });
+                        },'image/png');
                     });
                 },
                 toggleLoading: function(show)
@@ -1512,7 +1512,7 @@ window.addEvent('domready', function()
                     /** images storage */
                     this.saves = [];
                     /* {
-                        base64image: '...'
+                        imageObjectUrl: '...'
                         dimension:   {
                             height:  3,
                             width:   3
@@ -1593,6 +1593,7 @@ window.addEvent('domready', function()
                         {
                             canvas.setSize(save.dimension.width, save.dimension.height);
 
+                            URL.revokeObjectURL(save.imageObjectUrl);
                             save = undefined;
                         }
 
@@ -1601,20 +1602,25 @@ window.addEvent('domready', function()
                         image = undefined;
                     };
 
-                    image.src = save.base64image;
+                    image.src = save.imageObjectUrl;
                 },
                 /** make save from current canvas contents */
                 createSave: function()
                 {
-                    this.saves.push({
-                        base64image: this.toolbox.canvas.$element.toDataURL('image/png'),
-                        dimension: {
-                            height: this.toolbox.canvas.height,
-                            width: this.toolbox.canvas.width
-                        }
-                    });
+                    var that = this;
+                    var dimensions = {
+                        height: that.toolbox.canvas.height,
+                        width: that.toolbox.canvas.width
+                    };
 
-                    this.updateFrontEnd();
+                    this.toolbox.canvas.$element.toBlob(function (blob) {
+                        that.saves.push({
+                            imageObjectUrl: URL.createObjectURL(blob),
+                            dimension: dimensions
+                        });
+
+                        that.updateFrontEnd();
+                    }, 'image/png');
                 }
             }),
             Redo: new Class({
@@ -1689,15 +1695,20 @@ window.addEvent('domready', function()
                 /** make save from current canvas contents */
                 createSave: function()
                 {
-                    this.saves.push({
-                        base64image: this.toolbox.canvas.$element.toDataURL('image/png'),
-                        dimension: {
-                            height: this.toolbox.canvas.height,
-                            width:  this.toolbox.canvas.width
-                        }
-                    });
+                    var that = this;
+                    var dimensions = {
+                        height: this.toolbox.canvas.height,
+                        width:  this.toolbox.canvas.width
+                    };
 
-                    this.updateFrontEnd();
+                    this.toolbox.canvas.$element.toBlob(function (blob) {
+                        that.saves.push({
+                            imageObjectUrl: URL.createObjectURL(blob),
+                            dimension: dimensions
+                        });
+
+                        that.updateFrontEnd();
+                    }, 'image/png');
                 },
                 /** recover recent image from saves */
                 recoverSave: function()
@@ -1718,6 +1729,7 @@ window.addEvent('domready', function()
                         {
                             canvas.setSize(save.dimension.width, save.dimension.height);
 
+                            URL.revokeObjectURL(save.imageObjectUrl);
                             save = undefined;
                         }
 
@@ -1726,10 +1738,11 @@ window.addEvent('domready', function()
                         image = undefined;
                     };
 
-                    image.src = save.base64image;
+                    image.src = save.imageObjectUrl;
                 },
                 clearSaves: function()
                 {
+                    this.saves.forEach(function (save) { URL.revokeObjectURL(save.imageObjectUrl); });
                     this.saves = [];
 
                     this.updateFrontEnd();
@@ -1742,9 +1755,6 @@ window.addEvent('domready', function()
                     this.parent();
 
                     this.name = 'brush';
-
-                    /** images storage */
-                    this.saves = [];
 
                     /** DOM reference */
                     this.$element = Elements.from('<a href="#" class="tool brush-tool" title="Brush"></a>')[0];
