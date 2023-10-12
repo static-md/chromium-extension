@@ -176,6 +176,9 @@ window.addEvent('domready', function()
                     lineWidth: Math.ceil(4 / ratio)
                 };
 
+                /** @type Function[] */
+                this.keyUpHandlers = [];
+
                 /** prepares */
                 {
                     var that = this;
@@ -297,6 +300,14 @@ window.addEvent('domready', function()
                 this.resetPosition();
 
                 var that = this;
+
+                document.onkeyup = function(e) {
+                    for (const handler of that.keyUpHandlers) {
+                        if (handler(e)) {
+                            return;
+                        }
+                    }
+                };
 
                 // animate tools some time to get eyes attention (on colorful images, toolbox is hard to observe)
                 {
@@ -1526,7 +1537,7 @@ window.addEvent('domready', function()
                     } */
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool undo-tool" title="Undo"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool undo-tool" title="Undo (Ctrl+Z)"></a>')[0];
                 },
                 init: function()
                 {
@@ -1535,6 +1546,18 @@ window.addEvent('domready', function()
                     this.$element.addEvent('click', function(){
                         that.toolbox.activateTool(that);
                     });
+                    this.toolbox.keyUpHandlers.push(
+                        /**
+                         * @param {KeyboardEvent} e
+                         * @returns {boolean}
+                         */
+                        function (e) {
+                            if (e.code === 'KeyZ' && e.ctrlKey && !e.shiftKey) {
+                                that.$element.fireEvent('click'); // activate
+                                return true;
+                            }
+                        }
+                    );
 
                     this.toolbox.$eventBox.addEvent('beginChange', function(){
                         that.createSave();
@@ -1643,7 +1666,7 @@ window.addEvent('domready', function()
                     this.saves = [];
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool redo-tool" title="Redo"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool redo-tool" title="Redo (Ctrl+Shift+Z)"></a>')[0];
                 },
                 init: function()
                 {
@@ -1652,6 +1675,18 @@ window.addEvent('domready', function()
                     this.$element.addEvent('click', function(){
                         that.toolbox.activateTool(that);
                     });
+                    this.toolbox.keyUpHandlers.push(
+                        /**
+                         * @param {KeyboardEvent} e
+                         * @returns {boolean}
+                         */
+                        function (e) {
+                            if (e.code === 'KeyZ' && e.ctrlKey && e.shiftKey) {
+                                that.$element.fireEvent('click'); // activate
+                                return true;
+                            }
+                        }
+                    );
 
                     this.toolbox.$eventBox.addEvent('beginUndo', function(){
                         that.createSave();
