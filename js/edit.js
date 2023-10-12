@@ -523,25 +523,27 @@ window.addEvent('domready', function()
                     {
                         that.toolbox.activateTool(that);
 
-                        var d = new Date(),
-                            date    = d.getDate(),
-                            month   = d.getMonth() + 1,
-                            year    = d.getFullYear(),
-                            hours   = d.getHours(),
-                            minutes = d.getMinutes(),
-                            seconds = d.getSeconds();
+                        setTimeout(function() {
+                            var d = new Date(),
+                                date    = d.getDate(),
+                                month   = d.getMonth() + 1,
+                                year    = d.getFullYear(),
+                                hours   = d.getHours(),
+                                minutes = d.getMinutes(),
+                                seconds = d.getSeconds();
 
-                        if (date < 10)    date    = '0'+ date;
-                        if (month < 10)   month   = '0'+ month;
-                        if (hours < 10)   hours   = '0'+ hours;
-                        if (minutes < 10) minutes = '0'+ minutes;
-                        if (seconds < 10) seconds = '0'+ seconds;
+                            if (date < 10)    date    = '0'+ date;
+                            if (month < 10)   month   = '0'+ month;
+                            if (hours < 10)   hours   = '0'+ hours;
+                            if (minutes < 10) minutes = '0'+ minutes;
+                            if (seconds < 10) seconds = '0'+ seconds;
 
-                        var filename = 'StaticShot_'+ date +'-'+ month +'-'+ year +'_'+ hours +'-'+ minutes +'-'+ seconds +'.png';
+                            var filename = 'StaticShot_'+ date +'-'+ month +'-'+ year +'_'+ hours +'-'+ minutes +'-'+ seconds +'.png';
 
-                        that.toolbox.canvas.$element.toBlob(function(blob){
-                            saveAs(blob, filename);
-                        });
+                            that.toolbox.canvas.$element.toBlob(function(blob){
+                                saveAs(blob, filename);
+                            });
+                        }, 100 /* wait auto-crop finish */);
                     });
                 },
                 activate: function()
@@ -750,26 +752,28 @@ window.addEvent('domready', function()
                         that.toolbox.blocked = true;
                         that.toggleLoading(true);
 
-                        that.toolbox.canvas.$element.toBlob(function (blob) {
-                            APIv2.upload({
-                                image: blob,
-                                onError: function(message) {
-                                    that.toggleLoading(false);
-                                    that.toggleError(message);
+                        setTimeout(function() {
+                            that.toolbox.canvas.$element.toBlob(function (blob) {
+                                APIv2.upload({
+                                    image: blob,
+                                    onError: function(message) {
+                                        that.toggleLoading(false);
+                                        that.toggleError(message);
 
-                                    that.toolbox.blocked = false;
-                                },
-                                onSuccess: function(response) {
-                                    sendMessage({
-                                        cmd: 'bg:delete_capture'
-                                    });
+                                        that.toolbox.blocked = false;
+                                    },
+                                    onSuccess: function(response) {
+                                        sendMessage({
+                                            cmd: 'bg:delete_capture'
+                                        });
 
-                                    setTimeout(function(){
-                                        window.location.replace((response.page || response.image));
-                                    }, 0);
-                                }
-                            });
-                        },'image/png');
+                                        setTimeout(function(){
+                                            window.location.replace((response.page || response.image));
+                                        }, 0);
+                                    }
+                                });
+                            },'image/png');
+                        }, 100 /* wait auto-crop finish */)
                     });
                 },
                 toggleLoading: function(show)
@@ -984,6 +988,8 @@ window.addEvent('domready', function()
                 },
                 deactivate: function()
                 {
+                    this.$element.fireEvent('click'); // auto-crop on tool change
+
                     this.$element.removeClass('active');
                     this.isReady();
 
