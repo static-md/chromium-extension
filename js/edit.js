@@ -141,8 +141,16 @@ window.addEvent('domready', function()
         });
 
         /**
-         * contains tools
+         * If a tool depends on original canvas (to get its size) then it should wait for previous tool to finish.
+         *
+         * For example Crop does auto-apply on deactivate and changes the canvas size.
+         *
+         * @param {Function} fn
          */
+        function waitPreviousToolAutoApply(fn) {
+            setTimeout(fn, 20);
+        }
+
         var Toolbox = new Class({
             initialize: function()
             {
@@ -155,7 +163,7 @@ window.addEvent('domready', function()
                 /** canvas control instance */
                 this.canvas = mainCanvas;
 
-                /** if functionality is blocked (for eg. to prevent use of tools while uploading image) */
+                /** if functionality is blocked (for e.g. to prevent use of tools while uploading image) */
                 this.blocked = false;
 
                 /** the tool that curretly was clicked to activate, but last active tool was not deactivated */
@@ -534,7 +542,7 @@ window.addEvent('domready', function()
                     {
                         that.toolbox.activateTool(that);
 
-                        setTimeout(function() {
+                        waitPreviousToolAutoApply(function() {
                             var d = new Date(),
                                 date    = d.getDate(),
                                 month   = d.getMonth() + 1,
@@ -554,7 +562,7 @@ window.addEvent('domready', function()
                             that.toolbox.canvas.$element.toBlob(function(blob){
                                 saveAs(blob, filename);
                             });
-                        }, 100 /* wait auto-crop finish */);
+                        });
                     });
                 },
                 activate: function()
@@ -568,7 +576,7 @@ window.addEvent('domready', function()
                             that.toolbox.lastActiveTool
                                 && !that.notAllowedForAutoReactivation.contains(that.toolbox.lastActiveTool.name)
                                 && that.toolbox.activateToolByName(that.toolbox.lastActiveTool.name)
-                            ) {
+                        ) {
                             //console.log ('[Info] Last tool reactivated');
                         } else {
                             that.toolbox.deactivateCurrentActiveTool();
@@ -763,7 +771,7 @@ window.addEvent('domready', function()
                         that.toolbox.blocked = true;
                         that.toggleLoading(true);
 
-                        setTimeout(function() {
+                        waitPreviousToolAutoApply(function() {
                             that.toolbox.canvas.$element.toBlob(function (blob) {
                                 APIv2.upload({
                                     image: blob,
@@ -784,7 +792,7 @@ window.addEvent('domready', function()
                                     }
                                 });
                             },'image/png');
-                        }, 100 /* wait auto-crop finish */)
+                        })
                     });
                 },
                 toggleLoading: function(show)
@@ -1824,11 +1832,14 @@ window.addEvent('domready', function()
                 },
                 activate: function()
                 {
+                    var that = this;
+
                     this.$element.addClass('active');
 
-                    this.$canvas.inject(this.toolbox.canvas.$element.getParent(), 'top');
-
-                    this.reset();
+                    waitPreviousToolAutoApply(function(){
+                        that.$canvas.inject(that.toolbox.canvas.$element.getParent(), 'top');
+                        that.reset();
+                    });
                 },
                 deactivate: function()
                 {
@@ -2119,11 +2130,14 @@ window.addEvent('domready', function()
                 },
                 activate: function()
                 {
+                    var that = this;
+
                     this.$element.addClass('active');
 
-                    this.$canvas.inject(this.toolbox.canvas.$element.getParent(), 'top');
-
-                    this.reset();
+                    waitPreviousToolAutoApply(function(){
+                        that.$canvas.inject(that.toolbox.canvas.$element.getParent(), 'top');
+                        that.reset();
+                    });
                 },
                 deactivate: function()
                 {
@@ -2417,13 +2431,16 @@ window.addEvent('domready', function()
                 },
                 activate: function()
                 {
+                    var that = this;
+
                     this.$element.addClass('active');
 
-                    this.$edit.inject(this.toolbox.canvas.$element.getParent(), 'top');
+                    waitPreviousToolAutoApply(function(){
+                        that.$edit.inject(that.toolbox.canvas.$element.getParent(), 'top');
+                        that.$canvas.inject(that.toolbox.canvas.$element.getParent(), 'top');
 
-                    this.$canvas.inject(this.toolbox.canvas.$element.getParent(), 'top');
-
-                    this.reset();
+                        that.reset();
+                    });
                 },
                 deactivate: function()
                 {
@@ -2853,12 +2870,16 @@ window.addEvent('domready', function()
                 },
                 activate: function()
                 {
+                    var that = this;
+
                     this.$element.addClass('active');
 
-                    this.$editor.inject(this.toolbox.canvas.$element.getParent(), 'top');
-                    this.$cover.inject(this.toolbox.canvas.$element.getParent(), 'top');
+                    waitPreviousToolAutoApply(function(){
+                        that.$editor.inject(that.toolbox.canvas.$element.getParent(), 'top');
+                        that.$cover.inject(that.toolbox.canvas.$element.getParent(), 'top');
 
-                    this.reset();
+                        that.reset();
+                    });
                 },
                 deactivate: function()
                 {
