@@ -1186,7 +1186,10 @@ window.addEvent('domready', function()
                     });
 
                     {
-                        var info = (this.crop.end.x - this.crop.begin.x) +' x '+ (this.crop.end.y - this.crop.begin.y);
+                        var info = ''
+                            + Math.floor((this.crop.end.x - this.crop.begin.x) * ratio)
+                            + ' x '
+                            + Math.floor((this.crop.end.y - this.crop.begin.y) * ratio);
 
                         this.$elements.info.set('text', info);
                         this.$elements.included.setAttribute('title', info);
