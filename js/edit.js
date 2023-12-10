@@ -1,12 +1,12 @@
 window.addEvent('domready', function()
 {
     /** image */
-    var imageObjectUrl = '', ratio = 1;
+    var imageURL = '', ratio = 1;
 
     /* functions */
     {
         function sendMessage(r) {
-            chrome.extension.sendMessage(r);
+            chrome.runtime.sendMessage(r);
         }
 
         /**
@@ -120,7 +120,7 @@ window.addEvent('domready', function()
                     main();
                 };
 
-                pic.src = imageObjectUrl;
+                pic.src = imageURL;
             },
             update: function()
             {
@@ -1540,7 +1540,7 @@ window.addEvent('domready', function()
                     /** images storage */
                     this.saves = [];
                     /* {
-                        imageObjectUrl: '...'
+                        imageURL: '...'
                         dimension:   {
                             height:  3,
                             width:   3
@@ -1633,7 +1633,7 @@ window.addEvent('domready', function()
                         {
                             canvas.setSize(save.dimension.width, save.dimension.height);
 
-                            URL.revokeObjectURL(save.imageObjectUrl);
+                            URL.revokeObjectURL(save.imageURL);
                             save = undefined;
                         }
 
@@ -1642,7 +1642,7 @@ window.addEvent('domready', function()
                         image = undefined;
                     };
 
-                    image.src = save.imageObjectUrl;
+                    image.src = save.imageURL;
                 },
                 /** make save from current canvas contents */
                 createSave: function()
@@ -1655,7 +1655,7 @@ window.addEvent('domready', function()
 
                     this.toolbox.canvas.$element.toBlob(function (blob) {
                         that.saves.push({
-                            imageObjectUrl: URL.createObjectURL(blob),
+                            imageURL: URL.createObjectURL(blob),
                             dimension: dimensions
                         });
 
@@ -1755,7 +1755,7 @@ window.addEvent('domready', function()
 
                     this.toolbox.canvas.$element.toBlob(function (blob) {
                         that.saves.push({
-                            imageObjectUrl: URL.createObjectURL(blob),
+                            imageURL: URL.createObjectURL(blob),
                             dimension: dimensions
                         });
 
@@ -1781,7 +1781,7 @@ window.addEvent('domready', function()
                         {
                             canvas.setSize(save.dimension.width, save.dimension.height);
 
-                            URL.revokeObjectURL(save.imageObjectUrl);
+                            URL.revokeObjectURL(save.imageURL);
                             save = undefined;
                         }
 
@@ -1790,11 +1790,11 @@ window.addEvent('domready', function()
                         image = undefined;
                     };
 
-                    image.src = save.imageObjectUrl;
+                    image.src = save.imageURL;
                 },
                 clearSaves: function()
                 {
-                    this.saves.forEach(function (save) { URL.revokeObjectURL(save.imageObjectUrl); });
+                    this.saves.forEach(function (save) { URL.revokeObjectURL(save.imageURL); });
                     this.saves = [];
 
                     this.updateFrontEnd();
@@ -3028,7 +3028,7 @@ window.addEvent('domready', function()
      */
     var cmdOnlyOnce = {};
 
-    chrome.extension.onMessage.addListener(function(m, sender, sendResponse)
+    chrome.runtime.onMessage.addListener(function(m, sender, sendResponse)
     {
         switch (m.cmd) {
             case 'edit:ready':
@@ -3037,15 +3037,20 @@ window.addEvent('domready', function()
                     return;
                 }
 
-                if (!m.imageObjectUrl) {
+                if (!m.imageURL) {
                     $$('#image-wrapper').setStyle('display', 'none');
                     return false;
                 } else {
                     $$('#screensaver').setStyle('display', 'none');
                     $$('#image-wrapper').setStyle('display', '');
 
-                    imageObjectUrl = m.imageObjectUrl;
-                    start_editor();
+                    fetch(m.imageURL)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            imageURL = URL.createObjectURL(blob);
+                            start_editor();
+                        })
+                        .catch(reason => alert(reason.message));
                 }
 
                 cmdOnlyOnce[m.cmd] = true;
@@ -3053,7 +3058,5 @@ window.addEvent('domready', function()
         }
     });
 
-    sendMessage({
-        cmd: 'bg:edit:ready'
-    });
+    sendMessage({ cmd: 'bg:edit:ready' });
 });
