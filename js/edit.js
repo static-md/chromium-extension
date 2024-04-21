@@ -250,6 +250,16 @@ window.addEvent('domready', function()
                 });
             },
             /**
+             * @private
+             */
+            addNewExtensionLink: function()
+            {
+                var link = 'https://chrome.google.com/webstore/detail/llfgplnnffneodbpdabioechhhdhjfjb';
+                var $link = Elements.from('<a id="next-extension-link" target="_blank" href="'+link+'" title="New extension from StaticShot author">new</a>')[0];
+
+                $link.inject(this.$element[0]);
+            },
+            /**
              * Reset toolbox position
              * Set centered at the bottom of the page
              * @private
@@ -302,6 +312,7 @@ window.addEvent('domready', function()
             init: function()
             {
                 this.initTools();
+                this.addNewExtensionLink();
 
                 this.$element.inject(document.body, 'top');
 

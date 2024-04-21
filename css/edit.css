@@ -540,3 +540,16 @@ body {
 }
 
 /* ^ rotate animation */
+
+#toolbox #next-extension-link {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    padding: 0 3px;
+    border-radius: 3px;
+    background: #202020;
+    color: #ffa726;
+    box-shadow: 1px 1px 2px #ffa7263d;
+    font-size: 0.5rem;
+    text-decoration: none;
+}
