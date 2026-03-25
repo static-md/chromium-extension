@@ -223,7 +223,7 @@ window.addEvent('domready', function()
             getHtml: function()
             {
                 return ''+
-                '<div id="toolbox">'+
+                '<div id="toolbox" role="toolbar" aria-label="Image editing tools">'+
                     '<table border="0" cellpadding="0" cellspacing="0">'+
                         '<tr class="tools-wrapper"></tr>'+
                     '</table>'+
@@ -248,16 +248,6 @@ window.addEvent('domready', function()
 
                     tool.init();
                 });
-            },
-            /**
-             * @private
-             */
-            addNewExtensionLink: function()
-            {
-                var link = 'https://chrome.google.com/webstore/detail/llfgplnnffneodbpdabioechhhdhjfjb';
-                var $link = Elements.from('<a id="next-extension-link" target="_blank" href="'+link+'" title="New extension from StaticShot author">new</a>')[0];
-
-                $link.inject(this.$element[0]);
             },
             /**
              * Reset toolbox position
@@ -312,8 +302,6 @@ window.addEvent('domready', function()
             init: function()
             {
                 this.initTools();
-                this.addNewExtensionLink();
-
                 this.$element.inject(document.body, 'top');
 
                 this.resetPosition();
@@ -608,7 +596,7 @@ window.addEvent('domready', function()
                     this.name = 'upload';
 
                     /** DOM reference */
-                    this.$element = Elements.from('<a href="#" class="tool upload-image" title="Upload"></a>')[0];
+                    this.$element = Elements.from('<a href="#" class="tool upload-image" title="Upload Image"><span class="tool-icon upload-icon"></span><span class="tool-label">UPLOAD IMAGE</span></a>')[0];
 
                     /** timeout to remove error */
                     this.errorTimeoutId = 0;
@@ -859,6 +847,252 @@ window.addEvent('domready', function()
                     }
 
                     return new Blob([uInt8Array], {type: contentType});
+                },
+                activate: function()
+                {
+                },
+                deactivate: function()
+                {
+                }
+            }),
+            SaveAsNote: new Class({
+                Extends: Tool,
+                initialize: function()
+                {
+                    this.parent();
+
+                    this.name = 'save-as-note';
+
+                    /** DOM reference */
+                    this.$element = Elements.from('<a href="#" class="tool save-as-note" title="Save as Note"><span class="tool-icon note-icon"></span><span class="tool-label">SAVE AS NOTE</span><span class="tool-badge">NEW</span></a>')[0];
+
+                    /** timeout to remove error */
+                    this.errorTimeoutId = 0;
+
+                    /** how much time to show error style */
+                    this.errorTimeoutTime = 2000;
+                },
+                init: function(){
+                    var APIv2 = {
+                        isBusy: function() {
+                            return Boolean(this.currentOptions);
+                        },
+                        upload: function(options) {
+                            if (this.currentOptions) {
+                                return false;
+                            }
+
+                            this.currentOptions = Object.append({
+                                image: new Blob(),
+                                onSuccess: function(data) {
+                                    //
+                                },
+                                onError: function(errorMessage) {
+                                    //
+                                }
+                            }, options);
+
+                            delete options;
+
+                            this.readCurrentImageMD5();
+
+                            return true;
+                        },
+
+                        currentOptions: null,
+                        /*
+                         * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
+                         * Digest Algorithm, as defined in RFC 1321.
+                         * Copyright (C) Paul Johnston 1999 - 2000.
+                         * Updated by Greg Holt 2000 - 2001.
+                         * See http://pajhome.org.uk/site/legal.html for details.
+                         */
+                        md5: function(){"use strict";function n(n){var r,t="";for(r=0;3>=r;r++)t+=h.charAt(n>>8*r+4&15)+h.charAt(n>>8*r&15);return t}function r(n){var r,t=(n.length+8>>6)+1,u=new Array(16*t);for(r=0;16*t>r;r++)u[r]=0;for(r=0;r<n.length;r++)u[r>>2]|=n.charCodeAt(r)<<r%4*8;return u[r>>2]|=128<<r%4*8,u[16*t-2]=8*n.length,u}function t(n,r){var t=(65535&n)+(65535&r),u=(n>>16)+(r>>16)+(t>>16);return u<<16|65535&t}function u(n,r){return n<<r|n>>>32-r}function e(n,r,e,c,f,o){return t(u(t(t(r,n),t(c,o)),f),e)}function c(n,r,t,u,c,f,o){return e(r&t|~r&u,n,r,c,f,o)}function f(n,r,t,u,c,f,o){return e(r&u|t&~u,n,r,c,f,o)}function o(n,r,t,u,c,f,o){return e(r^t^u,n,r,c,f,o)}function i(n,r,t,u,c,f,o){return e(t^(r|~u),n,r,c,f,o)}function a(u){var e,a,h,v,g,l=r(u),A=1732584193,d=-271733879,s=-1732584194,b=271733878;for(e=0;e<l.length;e+=16)a=A,h=d,v=s,g=b,A=c(A,d,s,b,l[e+0],7,-680876936),b=c(b,A,d,s,l[e+1],12,-389564586),s=c(s,b,A,d,l[e+2],17,606105819),d=c(d,s,b,A,l[e+3],22,-1044525330),A=c(A,d,s,b,l[e+4],7,-176418897),b=c(b,A,d,s,l[e+5],12,1200080426),s=c(s,b,A,d,l[e+6],17,-1473231341),d=c(d,s,b,A,l[e+7],22,-45705983),A=c(A,d,s,b,l[e+8],7,1770035416),b=c(b,A,d,s,l[e+9],12,-1958414417),s=c(s,b,A,d,l[e+10],17,-42063),d=c(d,s,b,A,l[e+11],22,-1990404162),A=c(A,d,s,b,l[e+12],7,1804603682),b=c(b,A,d,s,l[e+13],12,-40341101),s=c(s,b,A,d,l[e+14],17,-1502002290),d=c(d,s,b,A,l[e+15],22,1236535329),A=f(A,d,s,b,l[e+1],5,-165796510),b=f(b,A,d,s,l[e+6],9,-1069501632),s=f(s,b,A,d,l[e+11],14,643717713),d=f(d,s,b,A,l[e+0],20,-373897302),A=f(A,d,s,b,l[e+5],5,-701558691),b=f(b,A,d,s,l[e+10],9,38016083),s=f(s,b,A,d,l[e+15],14,-660478335),d=f(d,s,b,A,l[e+4],20,-405537848),A=f(A,d,s,b,l[e+9],5,568446438),b=f(b,A,d,s,l[e+14],9,-1019803690),s=f(s,b,A,d,l[e+3],14,-187363961),d=f(d,s,b,A,l[e+8],20,1163531501),A=f(A,d,s,b,l[e+13],5,-1444681467),b=f(b,A,d,s,l[e+2],9,-51403784),s=f(s,b,A,d,l[e+7],14,1735328473),d=f(d,s,b,A,l[e+12],20,-1926607734),A=o(A,d,s,b,l[e+5],4,-378558),b=o(b,A,d,s,l[e+8],11,-2022574463),s=o(s,b,A,d,l[e+11],16,1839030562),d=o(d,s,b,A,l[e+14],23,-35309556),A=o(A,d,s,b,l[e+1],4,-1530992060),b=o(b,A,d,s,l[e+4],11,1272893353),s=o(s,b,A,d,l[e+7],16,-155497632),d=o(d,s,b,A,l[e+10],23,-1094730640),A=o(A,d,s,b,l[e+13],4,681279174),b=o(b,A,d,s,l[e+0],11,-358537222),s=o(s,b,A,d,l[e+3],16,-722521979),d=o(d,s,b,A,l[e+6],23,76029189),A=o(A,d,s,b,l[e+9],4,-640364487),b=o(b,A,d,s,l[e+12],11,-421815835),s=o(s,b,A,d,l[e+15],16,530742520),d=o(d,s,b,A,l[e+2],23,-995338651),A=i(A,d,s,b,l[e+0],6,-198630844),b=i(b,A,d,s,l[e+7],10,1126891415),s=i(s,b,A,d,l[e+14],15,-1416354905),d=i(d,s,b,A,l[e+5],21,-57434055),A=i(A,d,s,b,l[e+12],6,1700485571),b=i(b,A,d,s,l[e+3],10,-1894986606),s=i(s,b,A,d,l[e+10],15,-1051523),d=i(d,s,b,A,l[e+1],21,-2054922799),A=i(A,d,s,b,l[e+8],6,1873313359),b=i(b,A,d,s,l[e+15],10,-30611744),s=i(s,b,A,d,l[e+6],15,-1560198380),d=i(d,s,b,A,l[e+13],21,1309151649),A=i(A,d,s,b,l[e+4],6,-145523070),b=i(b,A,d,s,l[e+11],10,-1120210379),s=i(s,b,A,d,l[e+2],15,718787259),d=i(d,s,b,A,l[e+9],21,-343485551),A=t(A,a),d=t(d,h),s=t(s,v),b=t(b,g);return n(A)+n(d)+n(s)+n(b)}var h="0123456789abcdef";return a}(),
+                        readCurrentImageMD5: (function () {
+                            var reader = new FileReader;
+
+                            reader.onerror = function () {
+                                {
+                                    var onError = APIv2.currentOptions.onError;
+
+                                    APIv2.currentOptions = null;
+
+                                    onError('Citirea conținutului imaginii a eșuat.');
+                                }
+                            };
+
+                            reader.onabort = function () {
+                                {
+                                    var onError = APIv2.currentOptions.onError;
+
+                                    APIv2.currentOptions = null;
+
+                                    onError('Citirea conținutului imaginii a fost întreruptă.');
+                                }
+                            };
+
+                            reader.onload = function () {
+                                var md5 = APIv2.md5(reader.result);
+
+                                APIv2.tokenGetter.append('md5', md5);
+                                APIv2.tokenGetter.send();
+                            };
+
+                            return function () {
+                                reader.readAsBinaryString(APIv2.currentOptions.image);
+                            };
+                        })(),
+                        tokenGetter: new Request.File({
+                            url: 'https://static.md/api/v2/get-token/',
+                            onSuccess: function(response){
+                                APIv2.tokenGetter.formData = new FormData(); // clear memory
+
+                                try {
+                                    response = JSON.parse(response);
+                                } catch (e) {
+                                    response = {error: 'Eroare server'};
+                                }
+
+                                if (response.error) {
+                                    {
+                                        var onError = APIv2.currentOptions.onError;
+
+                                        APIv2.currentOptions = null;
+
+                                        onError(response.error);
+                                    }
+                                } else {
+                                    setTimeout(function(){
+                                        APIv2.uploader.append('token', response.token);
+                                        APIv2.uploader.append('image', APIv2.currentOptions.image);
+                                        APIv2.uploader.send();
+                                    }, response.token_valid_after_seconds * 1000);
+                                }
+                            },
+                            onFailure: function(){
+                                APIv2.tokenGetter.formData = new FormData(); // clear memory
+
+                                {
+                                    var onError = APIv2.currentOptions.onError;
+
+                                    APIv2.currentOptions = null;
+
+                                    onError('Încărcarea imaginii a eșuat.');
+                                }
+                            }
+                        }),
+                        uploader: new Request.File({
+                            url: 'https://static.md/api/v2/upload/',
+                            onSuccess: function(response){
+                                APIv2.uploader.formData = new FormData(); // clear memory
+
+                                try {
+                                    response = JSON.parse(response);
+                                } catch (e) {
+                                    response = {error: 'Eroare server'};
+                                }
+
+                                if (response.error) {
+                                    {
+                                        var onError = APIv2.currentOptions.onError;
+
+                                        APIv2.currentOptions = null;
+
+                                        onError(response.error);
+                                    }
+                                } else {
+                                    APIv2.currentOptions.onSuccess(response);
+                                }
+                            },
+                            onFailure: function(){
+                                APIv2.uploader.formData = new FormData(); // clear memory
+
+                                {
+                                    var onError = APIv2.currentOptions.onError;
+
+                                    APIv2.currentOptions = null;
+
+                                    onError('Încărcarea imaginii a eșuat.');
+                                }
+                            }
+                        })
+                    };
+
+                    var that = this;
+
+                    this.$element.addEvent('click', function(e) {
+                        if (that.toolbox.blocked) {
+                            console.log('Please wait the current operation to finish');
+                            return false;
+                        }
+
+                        that.toolbox.activateTool(that);
+                        that.toolbox.blocked = true;
+                        that.toggleLoading(true);
+
+                        waitPreviousToolAutoApply(function() {
+                            that.toolbox.canvas.$element.toBlob(function(blob) {
+                                APIv2.upload({
+                                    image: blob,
+                                    onError: function(message) {
+                                        that.toggleLoading(false);
+                                        that.toggleError(message);
+                                        that.toolbox.blocked = false;
+                                    },
+                                    onSuccess: function(response) {
+                                        var noteXhr = new XMLHttpRequest();
+                                        noteXhr.open('POST', 'https://static.md/api/v4/notes', true);
+                                        noteXhr.setRequestHeader('Content-Type', 'application/json');
+                                        noteXhr.onload = function() {
+                                            if (noteXhr.status < 400) {
+                                                var noteResponse = JSON.parse(noteXhr.responseText);
+                                                sendMessage({ cmd: 'bg:delete_capture' });
+                                                window.location.replace('https://static.md/md/' + noteResponse.noteId);
+                                            } else {
+                                                that.toggleLoading(false);
+                                                that.toggleError('Note creation failed');
+                                                that.toolbox.blocked = false;
+                                            }
+                                        };
+                                        noteXhr.onerror = function() {
+                                            that.toggleLoading(false);
+                                            that.toggleError('Network error');
+                                            that.toolbox.blocked = false;
+                                        };
+                                        noteXhr.send(JSON.stringify({ content: '![Screenshot](' + response.image + ')\n\n' }));
+                                    }
+                                });
+                            }, 'image/png');
+                        });
+                    });
+                },
+                toggleLoading: function(show)
+                {
+                    show = show || false;
+
+                    if (show) {
+                        this.$element.addClass('save-as-note-loading');
+                    } else {
+                        this.$element.removeClass('save-as-note-loading');
+                    }
+                },
+                toggleError: function(message)
+                {
+                    message = message || false;
+
+                    var that = this;
+
+                    if (message) {
+                        clearTimeout(this.errorTimeoutId);
+
+                        this.$element.addClass('save-as-note-error');
+                        console.log(message);
+                        alert(message);
+
+                        this.errorTimeoutId = setTimeout(function(){
+                            that.$element.removeClass('save-as-note-error');
+                        }, this.errorTimeoutTime);
+                    }
                 },
                 activate: function()
                 {
@@ -3026,7 +3260,8 @@ window.addEvent('domready', function()
             toolbox.addTool(new Tools.Undo());
             toolbox.addTool(new Tools.Redo());
             toolbox.addTool(new Tools.Save());
-            toolbox.addTool(new Tools.Upload()); 
+            toolbox.addTool(new Tools.Upload());
+            toolbox.addTool(new Tools.SaveAsNote());
 
             toolbox.init();
         }

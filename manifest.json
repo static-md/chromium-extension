@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "StaticShot - Screenshot Capture & Annotate",
+  "name": "StaticShot - Screenshot to Notes & Images",
   "short_name": "StaticShot",
-  "description": "Capture pages, edit and upload images to Static.md",
-  "version": "1.12.1",
+  "description": "Capture, annotate, and save screenshots as markdown notes or images on Static.md",
+  "version": "1.13.0",
   "background": {
     "service_worker": "js/background.js"
   },
