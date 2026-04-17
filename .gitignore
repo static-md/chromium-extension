@@ -5,3 +5,4 @@ dist/
 public/excalidraw-assets/
 .omc/
 *.zip
+.DS_Store

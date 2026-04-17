@@ -7,7 +7,7 @@ import { STORAGE_KEY } from '../shared/types';
 import { uploadImage, saveAsNote } from '../shared/upload';
 import './editor.css';
 
-type Op = 'upload' | 'note';
+type Op = 'upload' | 'note' | 'save';
 
 type Status =
   | { kind: 'idle' }
@@ -57,6 +57,14 @@ const NoteIcon = () => (
   </Icon>
 );
 
+const DownloadIcon = () => (
+  <Icon>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </Icon>
+);
+
 function Banner({
   variant,
   onDismiss,
@@ -79,6 +87,17 @@ function Banner({
       </button>
     </div>
   );
+}
+
+function downloadScreenshot(blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `screenshot-${Date.now()}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function App() {
@@ -188,6 +207,11 @@ export function App() {
     try {
       const blob = await exportScene();
       if (!blob) throw new Error('Scene export failed');
+      if (op === 'save') {
+        downloadScreenshot(blob);
+        setStatus({ kind: 'idle' });
+        return;
+      }
       const url =
         op === 'upload' ? (await uploadImage(blob)).page : await saveAsNote(blob);
       setStatus({ kind: 'success', url });
@@ -259,6 +283,16 @@ export function App() {
                 >
                   <NoteIcon />
                   <span>{workingOp === 'note' ? 'Saving…' : 'Save as Note'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="staticshot-action-btn staticshot-action-btn--secondary"
+                  onClick={() => runAction('save')}
+                  disabled={workingOp !== null}
+                  title="Download PNG to your computer"
+                >
+                  <DownloadIcon />
+                  <span>{workingOp === 'save' ? 'Saving…' : 'Save to PC'}</span>
                 </button>
                 <button
                   type="button"

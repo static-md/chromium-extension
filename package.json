@@ -1,7 +1,7 @@
 {
   "name": "staticshot",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "scripts": {
     "sync-assets": "rm -rf public/excalidraw-assets && mkdir -p public/excalidraw-assets && cp -R node_modules/@excalidraw/excalidraw/dist/prod/fonts node_modules/@excalidraw/excalidraw/dist/prod/locales node_modules/@excalidraw/excalidraw/dist/prod/subset-shared.chunk.js node_modules/@excalidraw/excalidraw/dist/prod/subset-worker.chunk.js public/excalidraw-assets/",
