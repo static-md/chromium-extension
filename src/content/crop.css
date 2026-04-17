@@ -1,0 +1,52 @@
+.staticshot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Default state: whole-viewport dim via a separate layer. Once a selection exists
+ * we hide this layer and rely on the selection's box-shadow for the cutout. */
+.staticshot-overlay-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.staticshot-overlay.has-selection .staticshot-overlay-dim {
+  display: none;
+}
+
+.staticshot-selection {
+  position: absolute;
+  border: 2px solid #1971c2;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  display: none;
+}
+
+.staticshot-overlay.has-selection .staticshot-selection {
+  display: block;
+}
+
+.staticshot-hint {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(24, 28, 35, 0.92);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font:
+    13px/1.4 -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  pointer-events: none;
+  z-index: 2147483647;
+}

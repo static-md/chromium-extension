@@ -1,0 +1,214 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #eceef0;
+  font:
+    14px/1.4 -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+.staticshot-editor-root {
+  position: fixed;
+  inset: 0;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+}
+
+/* Terminal-window shell mirroring the static.md board editor chrome. */
+.staticshot-terminal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.staticshot-titlebar {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f6f7f9;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.staticshot-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.staticshot-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.staticshot-dot--close {
+  background: #ff5f57;
+}
+.staticshot-dot--min {
+  background: #ffbd2e;
+}
+.staticshot-dot--max {
+  background: #28c840;
+}
+
+.staticshot-title {
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    'Cascadia Code',
+    monospace;
+  font-size: 12px;
+  color: #6b6b70;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staticshot-editor-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Hide just the hamburger/main-menu trigger — NOT the whole .App-menu__left
+   column, since the per-element properties Island also lives there. */
+.staticshot-editor-canvas .dropdown-menu,
+.staticshot-editor-canvas .main-menu-trigger,
+.staticshot-editor-canvas .dropdown-menu-button {
+  display: none !important;
+}
+
+/* Hide the Library button in the top-right (alongside our renderTopRightUI). */
+.layer-ui__wrapper__top-right label[title='Library'],
+.layer-ui__wrapper__top-right .sidebar-trigger,
+.layer-ui__wrapper__top-right [aria-label='Library'] {
+  display: none !important;
+}
+
+.staticshot-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.staticshot-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.staticshot-action-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.staticshot-action-btn--primary {
+  background: #1971c2;
+  color: #fff;
+}
+
+.staticshot-action-btn--primary:hover:not(:disabled) {
+  background: #1864ab;
+}
+
+.staticshot-action-btn--secondary {
+  background: #e9ecef;
+  color: #212529;
+}
+
+.staticshot-action-btn--secondary:hover:not(:disabled) {
+  background: #dee2e6;
+}
+
+/* Banners sit below the titlebar, full-width within the terminal. */
+.staticshot-banner {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.staticshot-banner--success {
+  background: #e6fcf5;
+  color: #0b4a2f;
+}
+
+.staticshot-banner--error {
+  background: #fff0f0;
+  color: #6a1b1b;
+}
+
+.staticshot-banner a {
+  color: inherit;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.staticshot-banner button {
+  background: rgba(0, 0, 0, 0.08);
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.staticshot-banner-close {
+  background: transparent !important;
+  padding: 0 6px !important;
+  font-size: 18px !important;
+  line-height: 1;
+  margin-left: auto;
+  opacity: 0.55;
+}
+
+.staticshot-banner-close:hover {
+  opacity: 1;
+}
+
+.staticshot-empty {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  text-align: center;
+  padding: 24px;
+}

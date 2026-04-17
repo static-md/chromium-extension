@@ -1,0 +1,24 @@
+Capture, annotate, and share screenshots instantly.
+
+1. Click the extension icon to capture any page
+2. Annotate with brush, arrows, rectangles, text, and more
+3. Upload to static.md for instant sharing, or save as a collaborative markdown note
+4. Get a clean link — no accounts, no ads, no nonsense
+
+New in v1.13: Save as Note — turn any screenshot into an editable markdown note on static.md. Annotate, add context, and share with a single link.
+
+Features:
+- One-click full page capture
+- 11 annotation tools: brush, line, arrow, rectangle, text, crop, color picker, undo/redo
+- Upload to static.md for permanent image hosting
+- Save as Note: create a markdown note with your screenshot embedded
+- Right-click any image to edit with StaticShot
+- No sign-up required, no tracking, no watermarks
+
+Built by developers, for developers. Open source at github.com/static-md/chromium-extension
+
+---
+
+Test Instructions (additional instructions, paste into the 500 char box):
+
+No login or credentials required. Steps: 1) Install extension 2) Navigate to any webpage 3) Click the extension icon to capture a screenshot 4) Use annotation tools (brush, arrow, text, rectangle) to mark up the image 5) Click "Upload Image" to upload to static.md — you'll be redirected to the hosted image 6) Or click "Save as Note" to create a markdown note with the screenshot embedded at static.md/md/{id} 7) Right-click any image on a page and select "Edit with StaticShot" to test context menu

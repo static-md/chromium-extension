@@ -1,0 +1,36 @@
+{
+  "name": "staticshot",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "sync-assets": "rm -rf public/excalidraw-assets && mkdir -p public/excalidraw-assets && cp -R node_modules/@excalidraw/excalidraw/dist/prod/fonts node_modules/@excalidraw/excalidraw/dist/prod/locales node_modules/@excalidraw/excalidraw/dist/prod/subset-shared.chunk.js node_modules/@excalidraw/excalidraw/dist/prod/subset-worker.chunk.js public/excalidraw-assets/",
+    "dev": "npm run sync-assets && vite",
+    "build": "npm run sync-assets && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "zip": "npm run build && rm -f staticshot-v$npm_package_version.zip && (cd dist && zip -r ../staticshot-v$npm_package_version.zip .)"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "0.18.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "spark-md5": "3.0.2"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "2.4.0",
+    "@eslint/js": "10.0.1",
+    "@types/chrome": "0.1.40",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@types/spark-md5": "3.0.5",
+    "@vitejs/plugin-react": "6.0.1",
+    "eslint": "10.2.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.0",
+    "globals": "17.5.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.58.2",
+    "vite": "8.0.8"
+  }
+}
