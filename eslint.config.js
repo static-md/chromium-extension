@@ -11,6 +11,7 @@ export default [
       'node_modules/**',
       'public/excalidraw-assets/**',
       'legacy/**',
+      'staticshot-v*/**',
     ],
   },
   js.configs.recommended,

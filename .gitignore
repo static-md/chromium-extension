@@ -5,4 +5,5 @@ dist/
 public/excalidraw-assets/
 .omc/
 *.zip
+staticshot-v*/
 .DS_Store

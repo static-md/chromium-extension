@@ -7,20 +7,26 @@ import type { BackgroundMessage, PendingImage } from '../shared/types';
 declare global {
   interface Window {
     __staticshotCropActive?: boolean;
+    __staticshotCropListenerReady?: boolean;
   }
 }
 
-chrome.runtime.onMessage.addListener((msg: BackgroundMessage, _sender, sendResponse) => {
-  if (msg.type === 'START_CROP') {
-    if (window.__staticshotCropActive) {
-      sendResponse({ ok: false, reason: 'already-active' });
-      return false;
+// Guard against double-registration when the script is re-injected by the
+// background worker on tabs that were open before the extension loaded.
+if (!window.__staticshotCropListenerReady) {
+  window.__staticshotCropListenerReady = true;
+  chrome.runtime.onMessage.addListener((msg: BackgroundMessage, _sender, sendResponse) => {
+    if (msg.type === 'START_CROP') {
+      if (window.__staticshotCropActive) {
+        sendResponse({ ok: false, reason: 'already-active' });
+        return false;
+      }
+      startCrop(msg.captureDataUrl);
+      sendResponse({ ok: true });
     }
-    startCrop(msg.captureDataUrl);
-    sendResponse({ ok: true });
-  }
-  return false;
-});
+    return false;
+  });
+}
 
 function startCrop(captureDataUrl: string) {
   window.__staticshotCropActive = true;
