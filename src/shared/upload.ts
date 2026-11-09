@@ -1,65 +1,49 @@
-import SparkMD5 from 'spark-md5';
-
-const API_BASE = 'https://static.md/api/v2';
-const NOTES_ENDPOINT = 'https://static.md/api/v4/notes';
-
-export async function computeMd5(blob: Blob): Promise<string> {
-  const buf = await blob.arrayBuffer();
-  return SparkMD5.ArrayBuffer.hash(buf);
-}
+const API_BASE = 'https://static.md/api/v4';
+/** The public form token static.md's own upload page sends */
+const UPLOAD_TOKEN = 'carocetoken';
+const REF = 'chrome-extension';
 
 export type UploadResult = {
   /** Direct image URL — use this when embedding in markdown. */
   image: string;
-  /** Gallery/page URL — open this to show the image with metadata. */
+  /** Gallery page — open this to show or share the image. */
   page: string;
 };
 
+/** The link to open: shows static.md this visit came from the extension. Shared links stay clean. */
+export function withRef(url: string): string {
+  const tagged = new URL(url);
+  tagged.searchParams.set('ref', REF);
+  return tagged.toString();
+}
+
+/** Where the note after a save leads */
+export const ACCOUNT_URL = withRef('https://static.md/agents');
+export const HOME_URL = withRef('https://static.md/');
+
 export async function uploadImage(blob: Blob): Promise<UploadResult> {
-  const md5 = await computeMd5(blob);
-
-  const tokenForm = new FormData();
-  tokenForm.append('md5', md5);
-  const tokenRes = await fetch(`${API_BASE}/get-token/`, {
-    method: 'POST',
-    body: tokenForm,
-  });
-  const tokenJson = (await tokenRes.json()) as {
-    token?: string;
-    token_valid_after_seconds?: number;
+  const form = new FormData();
+  form.append('token', UPLOAD_TOKEN);
+  form.append('file', blob, 'screenshot.png');
+  const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: form });
+  const json = (await res.json().catch(() => ({}))) as {
+    gallery?: string;
+    links?: Array<{ url: string }>;
+    errors?: string[];
     error?: string;
   };
-  if (tokenJson.error) throw new Error(tokenJson.error);
-  if (!tokenJson.token) throw new Error('No token received');
-
-  const waitSec = tokenJson.token_valid_after_seconds ?? 0;
-  if (waitSec > 0) {
-    await new Promise((r) => setTimeout(r, waitSec * 1000));
+  if (json.error) throw new Error(json.error);
+  const image = json.links?.[0]?.url;
+  if (!image || !json.gallery) {
+    throw new Error(json.errors?.[0] ?? `Upload failed (HTTP ${res.status})`);
   }
-
-  const uploadForm = new FormData();
-  uploadForm.append('token', tokenJson.token);
-  uploadForm.append('image', blob, 'image.png');
-  const upRes = await fetch(`${API_BASE}/upload/`, {
-    method: 'POST',
-    body: uploadForm,
-  });
-  const upJson = (await upRes.json()) as {
-    page?: string;
-    image?: string;
-    error?: string;
-  };
-  if (upJson.error) throw new Error(upJson.error);
-  const image = upJson.image;
-  const page = upJson.page || image;
-  if (!image || !page) throw new Error('No URL in upload response');
-  return { image, page };
+  return { image, page: `https://static.md/g/${json.gallery}` };
 }
 
 /** Upload then create a markdown note on static.md embedding the image. */
 export async function saveAsNote(blob: Blob): Promise<string> {
   const { image } = await uploadImage(blob);
-  const res = await fetch(NOTES_ENDPOINT, {
+  const res = await fetch(`${API_BASE}/notes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content: `![Screenshot](${image})\n\n` }),

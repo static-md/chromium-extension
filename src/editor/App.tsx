@@ -4,21 +4,30 @@ import '@excalidraw/excalidraw/index.css';
 
 import type { PendingImage } from '../shared/types';
 import { STORAGE_KEY } from '../shared/types';
-import { uploadImage, saveAsNote } from '../shared/upload';
+import { ACCOUNT_URL, HOME_URL, saveAsNote, uploadImage, withRef } from '../shared/upload';
 import './editor.css';
 
-type Op = 'upload' | 'note' | 'save';
+type Op = 'copy' | 'save' | 'note' | 'upload';
 
 type Status =
   | { kind: 'idle' }
   | { kind: 'working'; op: Op }
+  | { kind: 'copied' }
   | { kind: 'success'; url: string }
   | { kind: 'error'; message: string };
 
 type ExcalidrawApi = {
   getSceneElements: () => readonly unknown[];
   getFiles: () => Record<string, unknown>;
-  getAppState: () => unknown;
+  getAppState: () => { width: number; height: number };
+  updateScene: (scene: { appState: object }) => void;
+};
+
+const FAILED: Record<Op, string> = {
+  copy: "Couldn't copy the image",
+  save: "Couldn't save the image",
+  note: "Couldn't save the note",
+  upload: 'Upload failed',
 };
 
 function Icon({ children }: { children: ReactNode }) {
@@ -39,6 +48,19 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
+const CopyIcon = () => (
+  <Icon>
+    <rect x="9" y="9" width="12" height="12" rx="1" />
+    <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+  </Icon>
+);
+
+const CheckIcon = () => (
+  <Icon>
+    <polyline points="20 6 9 17 4 12" />
+  </Icon>
+);
+
 const UploadIcon = () => (
   <Icon>
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -53,7 +75,6 @@ const NoteIcon = () => (
     <polyline points="14 2 14 8 20 8" />
     <line x1="16" y1="13" x2="8" y2="13" />
     <line x1="16" y1="17" x2="8" y2="17" />
-    <polyline points="10 9 9 9 8 9" />
   </Icon>
 );
 
@@ -75,7 +96,7 @@ function Banner({
   children: ReactNode;
 }) {
   return (
-    <div className={`staticshot-banner staticshot-banner--${variant}`}>
+    <div className={`staticshot-banner staticshot-banner--${variant}`} role="status">
       {children}
       <button
         type="button"
@@ -104,6 +125,7 @@ export function App() {
   const [pending, setPending] = useState<PendingImage | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [linkCopied, setLinkCopied] = useState(false);
   const apiRef = useRef<ExcalidrawApi | null>(null);
 
   useEffect(() => {
@@ -131,15 +153,14 @@ export function App() {
   const initialData = useMemo(() => {
     if (!pending) return null;
     const fileId = 'screenshot-bg';
-    const sceneX = Math.round(window.innerWidth / 2 - pending.width / 2);
-    const sceneY = Math.round(window.innerHeight / 2 - pending.height / 2);
+    const mimeType = pending.dataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png';
     return {
       elements: [
         {
           type: 'image',
           id: 'screenshot-element',
-          x: sceneX,
-          y: sceneY,
+          x: 0,
+          y: 0,
           width: pending.width,
           height: pending.height,
           angle: 0,
@@ -169,7 +190,7 @@ export function App() {
       ],
       files: {
         [fileId]: {
-          mimeType: 'image/png',
+          mimeType,
           id: fileId,
           dataURL: pending.dataUrl,
           created: pending.createdAt,
@@ -178,18 +199,38 @@ export function App() {
         } as any,
       },
       appState: {
-        viewBackgroundColor: '#f7f7f8',
-        scrollX: 0,
-        scrollY: 0,
+        viewBackgroundColor: '#f3f5f8',
+        currentItemStrokeColor: '#e03131',
         currentItemFillStyle: 'hachure' as const,
         currentItemRoughness: 1,
       },
     };
   }, [pending]);
 
-  async function exportScene(): Promise<Blob | null> {
+  /** Opens with the whole capture centered in view, never enlarged, clear of the toolbars. */
+  function fitScreenshot() {
     const api = apiRef.current;
-    if (!api) return null;
+    if (!api || !pending) return;
+    const { width, height } = api.getAppState();
+    if (!width || !height) {
+      window.setTimeout(fitScreenshot, 60);
+      return;
+    }
+    const room = { top: 84, bottom: 72, side: 32 };
+    const usable = height - room.top - room.bottom;
+    const zoom = Math.min(1, (width - 2 * room.side) / pending.width, usable / pending.height);
+    api.updateScene({
+      appState: {
+        zoom: { value: zoom },
+        scrollX: (width / zoom - pending.width) / 2,
+        scrollY: (room.top + usable / 2) / zoom - pending.height / 2,
+      },
+    });
+  }
+
+  async function exportScene(): Promise<Blob> {
+    const api = apiRef.current;
+    if (!api) throw new Error('The editor is still loading');
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return exportToBlob({
       elements: api.getSceneElements() as any,
@@ -204,26 +245,37 @@ export function App() {
   async function runAction(op: Op) {
     if (status.kind === 'working') return;
     setStatus({ kind: 'working', op });
+    setLinkCopied(false);
     try {
+      if (op === 'copy') {
+        // Handed over as a promise: the export can outlast the click that allows the copy
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': exportScene() })]);
+        setStatus({ kind: 'copied' });
+        window.setTimeout(
+          () => setStatus((now) => (now.kind === 'copied' ? { kind: 'idle' } : now)),
+          1800,
+        );
+        return;
+      }
       const blob = await exportScene();
-      if (!blob) throw new Error('Scene export failed');
       if (op === 'save') {
         downloadScreenshot(blob);
         setStatus({ kind: 'idle' });
         return;
       }
-      const url =
-        op === 'upload' ? (await uploadImage(blob)).page : await saveAsNote(blob);
+      const url = op === 'upload' ? (await uploadImage(blob)).page : await saveAsNote(blob);
       setStatus({ kind: 'success', url });
-      void chrome.tabs.create({ url, active: true });
+      void chrome.tabs.create({ url: withRef(url), active: true });
     } catch (err) {
-      setStatus({ kind: 'error', message: err instanceof Error ? err.message : String(err) });
+      const reason = err instanceof Error ? err.message : String(err);
+      setStatus({ kind: 'error', message: `${FAILED[op]}: ${reason}` });
     }
   }
 
-  async function copyUrl(url: string) {
+  async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
     } catch (err) {
       console.error('[StaticShot] clipboard write failed:', err);
     }
@@ -234,7 +286,7 @@ export function App() {
   if (!pending || !initialData) {
     return (
       <div className="staticshot-empty">
-        No image to edit. Close this tab and click the extension icon to start.
+        Nothing to edit yet. Click the StaticShot icon on any page to capture it.
       </div>
     );
   }
@@ -243,74 +295,83 @@ export function App() {
   const dismiss = () => setStatus({ kind: 'idle' });
 
   return (
-    <div className="staticshot-editor-root">
-      <div className="staticshot-terminal">
-        <div className="staticshot-titlebar">
-          <div className="staticshot-dots" aria-hidden="true">
-            <span className="staticshot-dot staticshot-dot--close" />
-            <span className="staticshot-dot staticshot-dot--min" />
-            <span className="staticshot-dot staticshot-dot--max" />
-          </div>
-          <span className="staticshot-title">~/screenshot.png</span>
+    <div className="staticshot-editor">
+      <header className="staticshot-bar">
+        <a className="staticshot-brand" href={HOME_URL} target="_blank" rel="noreferrer">
+          <img src="/icons/48.png" alt="" width="22" height="22" />
+          <span>StaticShot</span>
+        </a>
+        <div className="staticshot-actions">
+          <button
+            type="button"
+            className="staticshot-action-btn"
+            onClick={() => runAction('copy')}
+            disabled={workingOp !== null}
+            title="Copy the image to your clipboard"
+          >
+            {status.kind === 'copied' ? <CheckIcon /> : <CopyIcon />}
+            <span>{status.kind === 'copied' ? 'Copied' : 'Copy'}</span>
+          </button>
+          <button
+            type="button"
+            className="staticshot-action-btn"
+            onClick={() => runAction('save')}
+            disabled={workingOp !== null}
+            title="Download a PNG to your computer"
+          >
+            <DownloadIcon />
+            <span>{workingOp === 'save' ? 'Saving…' : 'Download'}</span>
+          </button>
+          <button
+            type="button"
+            className="staticshot-action-btn"
+            onClick={() => runAction('note')}
+            disabled={workingOp !== null}
+            title="Save as a markdown note on static.md"
+          >
+            <NoteIcon />
+            <span>{workingOp === 'note' ? 'Saving…' : 'Save as note'}</span>
+          </button>
+          <button
+            type="button"
+            className="staticshot-action-btn staticshot-action-btn--primary"
+            onClick={() => runAction('upload')}
+            disabled={workingOp !== null}
+            title="Upload to static.md and get a link"
+          >
+            <UploadIcon />
+            <span>{workingOp === 'upload' ? 'Uploading…' : 'Upload'}</span>
+          </button>
         </div>
-        {status.kind === 'success' && (
-          <Banner variant="success" onDismiss={dismiss}>
-            <a href={status.url} target="_blank" rel="noreferrer">
-              {status.url}
-            </a>
-            <button type="button" onClick={() => copyUrl(status.url)}>
-              Copy URL
-            </button>
-          </Banner>
-        )}
-        {status.kind === 'error' && (
-          <Banner variant="error" onDismiss={dismiss}>
-            Upload failed: {status.message}
-          </Banner>
-        )}
-        <div className="staticshot-editor-canvas">
-          <Excalidraw
-            initialData={initialData}
-            UIOptions={{ tools: { image: false } }}
-            renderTopRightUI={() => (
-              <div className="staticshot-actions">
-                <button
-                  type="button"
-                  className="staticshot-action-btn staticshot-action-btn--secondary"
-                  onClick={() => runAction('note')}
-                  disabled={workingOp !== null}
-                  title="Save as Markdown note on static.md"
-                >
-                  <NoteIcon />
-                  <span>{workingOp === 'note' ? 'Saving…' : 'Save as Note'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="staticshot-action-btn staticshot-action-btn--secondary"
-                  onClick={() => runAction('save')}
-                  disabled={workingOp !== null}
-                  title="Download PNG to your computer"
-                >
-                  <DownloadIcon />
-                  <span>{workingOp === 'save' ? 'Saving…' : 'Save to PC'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="staticshot-action-btn staticshot-action-btn--primary"
-                  onClick={() => runAction('upload')}
-                  disabled={workingOp !== null}
-                  title="Upload image to static.md"
-                >
-                  <UploadIcon />
-                  <span>{workingOp === 'upload' ? 'Uploading…' : 'Upload'}</span>
-                </button>
-              </div>
-            )}
-            excalidrawAPI={(api) => {
-              apiRef.current = api as unknown as ExcalidrawApi;
-            }}
-          />
-        </div>
+      </header>
+      {status.kind === 'success' && (
+        <Banner variant="success" onDismiss={dismiss}>
+          <a href={status.url} target="_blank" rel="noreferrer">
+            {status.url.replace('https://', '')}
+          </a>
+          <button type="button" onClick={() => copyLink(status.url)}>
+            {linkCopied ? 'Copied' : 'Copy link'}
+          </button>
+          <a className="staticshot-invite" href={ACCOUNT_URL} target="_blank" rel="noreferrer">
+            Free account: keep your notes in one place and let your AI read them
+          </a>
+        </Banner>
+      )}
+      {status.kind === 'error' && (
+        <Banner variant="error" onDismiss={dismiss}>
+          {status.message}
+        </Banner>
+      )}
+      <div className="staticshot-editor-canvas">
+        <Excalidraw
+          initialData={initialData}
+          autoFocus
+          UIOptions={{ tools: { image: false } }}
+          excalidrawAPI={(api) => {
+            apiRef.current = api as unknown as ExcalidrawApi;
+            window.setTimeout(fitScreenshot, 60);
+          }}
+        />
       </div>
     </div>
   );

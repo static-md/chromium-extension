@@ -1,8 +1,8 @@
 import styleText from './crop.css?inline';
 import type { BackgroundMessage, PendingImage } from '../shared/types';
 
-// This script is statically injected into every page via manifest content_scripts.
-// It stays dormant until the background worker sends a START_CROP message.
+// Injected into the active tab when the toolbar icon or the shortcut is used,
+// and it starts as soon as the background worker sends a START_CROP message.
 
 declare global {
   interface Window {
@@ -11,8 +11,7 @@ declare global {
   }
 }
 
-// Guard against double-registration when the script is re-injected by the
-// background worker on tabs that were open before the extension loaded.
+// Guard against double-registration when the same tab is captured again.
 if (!window.__staticshotCropListenerReady) {
   window.__staticshotCropListenerReady = true;
   chrome.runtime.onMessage.addListener((msg: BackgroundMessage, _sender, sendResponse) => {
@@ -51,7 +50,7 @@ function startCrop(captureDataUrl: string) {
   const hint = document.createElement('div');
   hint.className = 'staticshot-hint';
   hint.textContent =
-    'Drag to crop · Click or Space = full viewport · Esc to cancel';
+    'Drag to select · Click or Space for the full view · Esc to cancel';
 
   document.body.appendChild(overlay);
   document.body.appendChild(hint);

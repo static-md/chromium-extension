@@ -1,3 +1,15 @@
+:root {
+  --ss-surface: oklch(97.2% 0.006 240);
+  --ss-raised: oklch(99.4% 0.003 240);
+  --ss-sunken: oklch(93.8% 0.01 242);
+  --ss-text: oklch(19% 0.025 255);
+  --ss-text-2: oklch(38% 0.025 250);
+  --ss-border: oklch(87% 0.012 245);
+  --ss-primary: oklch(50% 0.16 245);
+  --ss-primary-hover: oklch(44% 0.16 247);
+  --ss-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 html,
 body,
 #root {
@@ -6,107 +18,38 @@ body,
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: #eceef0;
-  font:
-    14px/1.4 -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  background: var(--ss-surface);
+  color: var(--ss-text);
+  font: 14px/1.4 var(--ss-mono);
 }
 
-.staticshot-editor-root {
+.staticshot-editor {
   position: fixed;
   inset: 0;
-  padding: 16px;
-  box-sizing: border-box;
-  overflow: hidden;
-  display: flex;
-}
-
-/* Terminal-window shell mirroring the static.md board editor chrome. */
-.staticshot-terminal {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.06),
-    0 10px 30px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
 }
 
-.staticshot-titlebar {
+.staticshot-bar {
   flex-shrink: 0;
-  height: 40px;
-  padding: 0 12px;
+  height: 52px;
+  padding: 0 12px 0 16px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: #f6f7f9;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--ss-raised);
+  border-bottom: 1px solid var(--ss-border);
 }
 
-.staticshot-dots {
-  display: flex;
-  gap: 6px;
-}
-
-.staticshot-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.staticshot-dot--close {
-  background: #ff5f57;
-}
-.staticshot-dot--min {
-  background: #ffbd2e;
-}
-.staticshot-dot--max {
-  background: #28c840;
-}
-
-.staticshot-title {
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    Monaco,
-    'Cascadia Code',
-    monospace;
-  font-size: 12px;
-  color: #6b6b70;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.staticshot-editor-canvas {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-}
-
-/* Hide just the hamburger/main-menu trigger — NOT the whole .App-menu__left
-   column, since the per-element properties Island also lives there. */
-.staticshot-editor-canvas .dropdown-menu,
-.staticshot-editor-canvas .main-menu-trigger,
-.staticshot-editor-canvas .dropdown-menu-button {
-  display: none !important;
-}
-
-/* Hide the Library button in the top-right (alongside our renderTopRightUI). */
-.layer-ui__wrapper__top-right label[title='Library'],
-.layer-ui__wrapper__top-right .sidebar-trigger,
-.layer-ui__wrapper__top-right [aria-label='Library'] {
-  display: none !important;
+.staticshot-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ss-text);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .staticshot-actions {
@@ -118,15 +61,30 @@ body,
 .staticshot-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 36px;
+  gap: 8px;
+  height: 34px;
   padding: 0 12px;
-  border-radius: 6px;
-  border: 0;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 2px;
+  border: 1px solid var(--ss-border);
+  background: var(--ss-raised);
+  color: var(--ss-text);
+  font: 500 12px/1 var(--ss-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.staticshot-action-btn:hover:not(:disabled) {
+  background: var(--ss-sunken);
+}
+
+.staticshot-action-btn:focus-visible,
+.staticshot-brand:focus-visible,
+.staticshot-banner a:focus-visible,
+.staticshot-banner button:focus-visible {
+  outline: 2px solid var(--ss-primary);
+  outline-offset: 2px;
 }
 
 .staticshot-action-btn:disabled {
@@ -135,70 +93,95 @@ body,
 }
 
 .staticshot-action-btn--primary {
-  background: #1971c2;
+  background: var(--ss-primary);
+  border-color: var(--ss-primary);
   color: #fff;
 }
 
 .staticshot-action-btn--primary:hover:not(:disabled) {
-  background: #1864ab;
+  background: var(--ss-primary-hover);
 }
 
-.staticshot-action-btn--secondary {
-  background: #e9ecef;
-  color: #212529;
+.staticshot-editor-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
 }
 
-.staticshot-action-btn--secondary:hover:not(:disabled) {
-  background: #dee2e6;
+/* The accent follows static.md's ink blue */
+.staticshot-editor-canvas .excalidraw {
+  --color-primary: #0b63c5;
+  --color-primary-darker: #0a56ab;
+  --color-primary-darkest: #084890;
+  --color-primary-light: #dcebfb;
+  --color-surface-primary-container: #dcebfb;
+  --color-on-primary-container: #084890;
 }
 
-/* Banners sit below the titlebar, full-width within the terminal. */
+/* The bar above is the only menu: no hamburger, no library, no hint line */
+.staticshot-editor-canvas .dropdown-menu,
+.staticshot-editor-canvas .main-menu-trigger,
+.staticshot-editor-canvas .dropdown-menu-button,
+.staticshot-editor-canvas .HintViewer,
+.layer-ui__wrapper__top-right label[title='Library'],
+.layer-ui__wrapper__top-right .sidebar-trigger,
+.layer-ui__wrapper__top-right [aria-label='Library'] {
+  display: none !important;
+}
+
 .staticshot-banner {
   flex-shrink: 0;
-  padding: 10px 14px;
-  font-size: 13px;
+  min-height: 40px;
+  padding: 6px 12px 6px 16px;
+  box-sizing: border-box;
+  font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  gap: 12px;
+  border-bottom: 1px solid var(--ss-border);
 }
 
 .staticshot-banner--success {
-  background: #e6fcf5;
-  color: #0b4a2f;
+  background: oklch(95% 0.04 152);
+  color: oklch(30% 0.09 152);
 }
 
 .staticshot-banner--error {
-  background: #fff0f0;
-  color: #6a1b1b;
+  background: oklch(95% 0.03 25);
+  color: oklch(36% 0.13 25);
 }
 
 .staticshot-banner a {
   color: inherit;
-  text-decoration: underline;
+  font-weight: 600;
   word-break: break-all;
 }
 
 .staticshot-banner button {
-  background: rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.07);
   border: 0;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
+  border-radius: 2px;
+  padding: 5px 8px;
+  font: 500 12px/1 var(--ss-mono);
   cursor: pointer;
   color: inherit;
 }
 
-.staticshot-banner-close {
-  background: transparent !important;
-  padding: 0 6px !important;
-  font-size: 18px !important;
-  line-height: 1;
+.staticshot-banner a.staticshot-invite {
   margin-left: auto;
+  font-weight: 400;
+  word-break: normal;
+}
+
+.staticshot-banner .staticshot-banner-close {
+  background: transparent;
+  padding: 0 6px;
+  font-size: 18px;
   opacity: 0.55;
 }
 
-.staticshot-banner-close:hover {
+.staticshot-banner .staticshot-banner-close:hover {
   opacity: 1;
 }
 
@@ -208,7 +191,17 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--ss-text-2);
   text-align: center;
   padding: 24px;
+}
+
+@media (max-width: 760px) {
+  .staticshot-action-btn:not(.staticshot-action-btn--primary) span {
+    display: none;
+  }
+
+  .staticshot-banner a.staticshot-invite {
+    display: none;
+  }
 }
