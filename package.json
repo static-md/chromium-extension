@@ -12,7 +12,7 @@
     "zip": "npm run build && rm -f staticshot-v$npm_package_version.zip && (cd dist && zip -r ../staticshot-v$npm_package_version.zip . -x '*.DS_Store')"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "0.18.0",
+    "@excalidraw/excalidraw": "0.18.1",
     "react": "19.2.5",
     "react-dom": "19.2.5"
   },
