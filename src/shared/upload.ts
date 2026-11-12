@@ -24,7 +24,7 @@ export const HOME_URL = withRef('https://static.md/');
 export async function uploadImage(blob: Blob): Promise<UploadResult> {
   const form = new FormData();
   form.append('token', UPLOAD_TOKEN);
-  form.append('file', blob, 'screenshot.png');
+  form.append('file', blob, blob.type === 'image/jpeg' ? 'screenshot.jpg' : 'screenshot.png');
   const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: form });
   const json = (await res.json().catch(() => ({}))) as {
     gallery?: string;

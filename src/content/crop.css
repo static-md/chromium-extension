@@ -35,8 +35,11 @@
 .staticshot-hint {
   position: fixed;
   top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centered by margins: left: 50% would cap it at half the window and wrap early */
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: max-content;
   background: #10151d;
   color: #fff;
   padding: 8px 14px;
@@ -50,4 +53,41 @@
   letter-spacing: 0.02em;
   pointer-events: none;
   z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+
+/* Page styles can reach these elements, so the button starts from nothing */
+.staticshot-hint .staticshot-hint-btn {
+  all: unset;
+  flex: none;
+  pointer-events: auto;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  color: #fff;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: nowrap;
+}
+
+.staticshot-hint .staticshot-hint-btn:hover,
+.staticshot-hint .staticshot-hint-btn:focus-visible {
+  background: #0b63c5;
+  border-color: #0b63c5;
+}
+
+.staticshot-hint .staticshot-hint-btn kbd {
+  all: unset;
+  font: inherit;
+  padding: 0 5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
 }

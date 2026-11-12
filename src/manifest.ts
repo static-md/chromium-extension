@@ -9,7 +9,7 @@ export default defineManifest({
   short_name: 'StaticShot',
   description:
     'Capture any page, mark it up and share a link in seconds. Save as an image or a markdown note. No sign-up.',
-  version: '2.1.0',
+  version: '2.2.0',
   icons: {
     '16': 'icons/16.png',
     '48': 'icons/48.png',
@@ -23,7 +23,7 @@ export default defineManifest({
     default_icon: 'icons/48.png',
     default_title: 'Capture the page',
   },
-  permissions: ['activeTab', 'storage', 'scripting'],
+  permissions: ['activeTab', 'scripting'],
   host_permissions: ['https://static.md/*'],
   commands: {
     _execute_action: {

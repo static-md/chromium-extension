@@ -3,7 +3,7 @@ import { Excalidraw, exportToBlob } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
 
 import type { PendingImage } from '../shared/types';
-import { STORAGE_KEY } from '../shared/types';
+import { clearPending, readPending } from '../shared/pendingStore';
 import { ACCOUNT_URL, HOME_URL, saveAsNote, uploadImage, withRef } from '../shared/upload';
 import './editor.css';
 
@@ -15,6 +15,10 @@ type Status =
   | { kind: 'copied' }
   | { kind: 'success'; url: string }
   | { kind: 'error'; message: string };
+
+/** static.md takes uploads up to 10 MB: a bigger PNG goes as a JPEG */
+const UPLOAD_LIMIT = 10 * 1024 * 1024;
+const JPEG_QUALITIES = [0.92, 0.85, 0.75];
 
 type ExcalidrawApi = {
   getSceneElements: () => readonly unknown[];
@@ -132,12 +136,11 @@ export function App() {
     let cancelled = false;
     (async () => {
       try {
-        const got = await chrome.storage.session.get(STORAGE_KEY);
-        const image = got[STORAGE_KEY] as PendingImage | undefined;
+        const image = await readPending();
         if (cancelled) return;
         if (image && image.dataUrl) {
           setPending(image);
-          void chrome.storage.session.remove(STORAGE_KEY);
+          void clearPending();
         }
       } catch (err) {
         console.error('[StaticShot] failed to read pending image:', err);
@@ -207,7 +210,11 @@ export function App() {
     };
   }, [pending]);
 
-  /** Opens with the whole capture centered in view, never enlarged, clear of the toolbars. */
+  /**
+   * Opens with the whole capture centered in view, never enlarged, clear of the
+   * toolbars. A full-page capture would shrink to a sliver that way, so it
+   * opens at full width from the top instead, to scroll down through.
+   */
   function fitScreenshot() {
     const api = apiRef.current;
     if (!api || !pending) return;
@@ -218,28 +225,50 @@ export function App() {
     }
     const room = { top: 84, bottom: 72, side: 32 };
     const usable = height - room.top - room.bottom;
-    const zoom = Math.min(1, (width - 2 * room.side) / pending.width, usable / pending.height);
+    const fitWidth = Math.min(1, (width - 2 * room.side) / pending.width);
+    const tall = pending.height * fitWidth > usable * 1.5;
+    const zoom = tall ? fitWidth : Math.min(fitWidth, usable / pending.height);
     api.updateScene({
       appState: {
         zoom: { value: zoom },
         scrollX: (width / zoom - pending.width) / 2,
-        scrollY: (room.top + usable / 2) / zoom - pending.height / 2,
+        scrollY: tall
+          ? room.top / zoom
+          : (room.top + usable / 2) / zoom - pending.height / 2,
       },
     });
   }
 
-  async function exportScene(): Promise<Blob> {
+  async function exportScene(format: { type: 'png' } | { type: 'jpeg'; quality: number } = { type: 'png' }): Promise<Blob> {
     const api = apiRef.current;
     if (!api) throw new Error('The editor is still loading');
     /* eslint-disable @typescript-eslint/no-explicit-any */
+    const appState = api.getAppState() as any;
     return exportToBlob({
       elements: api.getSceneElements() as any,
       files: api.getFiles() as any,
-      appState: { ...(api.getAppState() as any), exportBackground: false },
+      // JPEG has no transparency: anything outside the screenshot turns white, not black
+      appState:
+        format.type === 'png'
+          ? { ...appState, exportBackground: false }
+          : { ...appState, exportBackground: true, viewBackgroundColor: '#ffffff' },
       exportPadding: 0,
-      mimeType: 'image/png',
+      mimeType: `image/${format.type}`,
+      ...(format.type === 'jpeg' ? { quality: format.quality } : {}),
     });
     /* eslint-enable @typescript-eslint/no-explicit-any */
+  }
+
+  /** PNG when it fits static.md's limit, otherwise the best JPEG that does */
+  async function exportForUpload(): Promise<Blob> {
+    const png = await exportScene();
+    if (png.size <= UPLOAD_LIMIT) return png;
+    for (const quality of JPEG_QUALITIES) {
+      const jpeg = await exportScene({ type: 'jpeg', quality });
+      if (jpeg.size <= UPLOAD_LIMIT) return jpeg;
+    }
+    const mb = (png.size / 1024 / 1024).toFixed(0);
+    throw new Error(`the image is too big for static.md (${mb} MB, the limit is 10 MB). Download it instead`);
   }
 
   async function runAction(op: Op) {
@@ -257,12 +286,12 @@ export function App() {
         );
         return;
       }
-      const blob = await exportScene();
       if (op === 'save') {
-        downloadScreenshot(blob);
+        downloadScreenshot(await exportScene());
         setStatus({ kind: 'idle' });
         return;
       }
+      const blob = await exportForUpload();
       const url = op === 'upload' ? (await uploadImage(blob)).page : await saveAsNote(blob);
       setStatus({ kind: 'success', url });
       void chrome.tabs.create({ url: withRef(url), active: true });
