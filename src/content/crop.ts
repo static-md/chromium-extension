@@ -1,5 +1,6 @@
 import styleText from './crop.css?inline';
 import type { BackgroundMessage, PendingImage } from '../shared/types';
+import { captureFullPage } from './fullPage';
 
 // Injected into the active tab when the toolbar icon or the shortcut is used,
 // and it starts as soon as the background worker sends a START_CROP message.
@@ -49,8 +50,17 @@ function startCrop(captureDataUrl: string) {
 
   const hint = document.createElement('div');
   hint.className = 'staticshot-hint';
-  hint.textContent =
-    'Drag to select · Click or Space for the full view · Esc to cancel';
+  const hintText = document.createElement('span');
+  hintText.textContent = 'Drag to select · Click or Space for this screen · Esc to cancel';
+  const fullPageBtn = document.createElement('button');
+  fullPageBtn.type = 'button';
+  fullPageBtn.className = 'staticshot-hint-btn';
+  fullPageBtn.title = 'Scroll and capture the whole page';
+  fullPageBtn.append('Full page ');
+  const fullPageKey = document.createElement('kbd');
+  fullPageKey.textContent = 'F';
+  fullPageBtn.appendChild(fullPageKey);
+  hint.append(hintText, fullPageBtn);
 
   document.body.appendChild(overlay);
   document.body.appendChild(hint);
@@ -126,8 +136,29 @@ function startCrop(captureDataUrl: string) {
       e.preventDefault();
       useFullViewport();
       void confirmCrop();
+    } else if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      void startFullPage();
     }
   };
+
+  const onFullPageClick = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void startFullPage();
+  };
+
+  async function startFullPage() {
+    if (dragging) return;
+    teardown();
+    // Stays "active" until the capture ends, so a second click can't start another one
+    window.__staticshotCropActive = true;
+    try {
+      await captureFullPage();
+    } finally {
+      window.__staticshotCropActive = false;
+    }
+  }
 
   async function confirmCrop() {
     if (!rect) return;
@@ -152,6 +183,7 @@ function startCrop(captureDataUrl: string) {
 
   function teardown() {
     overlay.removeEventListener('mousedown', onMouseDown);
+    fullPageBtn.removeEventListener('click', onFullPageClick);
     window.removeEventListener('mousemove', onMouseMove, true);
     window.removeEventListener('mouseup', onMouseUp, true);
     window.removeEventListener('keydown', onKeyDown, true);
@@ -162,6 +194,7 @@ function startCrop(captureDataUrl: string) {
   }
 
   overlay.addEventListener('mousedown', onMouseDown);
+  fullPageBtn.addEventListener('click', onFullPageClick);
   window.addEventListener('mousemove', onMouseMove, true);
   window.addEventListener('mouseup', onMouseUp, true);
   window.addEventListener('keydown', onKeyDown, true);

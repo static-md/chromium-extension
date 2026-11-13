@@ -1,6 +1,6 @@
 import cropScript from './content/crop.ts?script';
-import type { BackgroundMessage, PendingImage } from './shared/types';
-import { STORAGE_KEY } from './shared/types';
+import { savePending } from './shared/pendingStore';
+import type { BackgroundMessage, FullPageLayout, PendingImage, TileReply } from './shared/types';
 
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab.id || tab.windowId === undefined) return;
@@ -33,39 +33,14 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 });
 
-/**
- * Session storage holds about 10 MB. A large, busy page can exceed that as a
- * PNG, so such a capture is kept as a high-quality JPEG instead of failing.
- */
-async function storePending(image: PendingImage) {
-  try {
-    await chrome.storage.session.set({ [STORAGE_KEY]: image });
-  } catch {
-    await chrome.storage.session.set({ [STORAGE_KEY]: await asJpeg(image) });
-  }
-}
-
-async function asJpeg(image: PendingImage): Promise<PendingImage> {
-  const bitmap = await createImageBitmap(await (await fetch(image.dataUrl)).blob());
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('2d context unavailable');
-  ctx.drawImage(bitmap, 0, 0);
-  bitmap.close?.();
-  const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.9 });
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-  return { ...image, dataUrl };
+async function openEditor(image: PendingImage) {
+  await savePending(image);
+  await chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
 }
 
 async function openEditorWithFullViewport(captureDataUrl: string) {
   try {
-    const blob = await (await fetch(captureDataUrl)).blob();
-    const bitmap = await createImageBitmap(blob);
+    const bitmap = await createImageBitmap(await (await fetch(captureDataUrl)).blob());
     const image: PendingImage = {
       dataUrl: captureDataUrl,
       width: bitmap.width,
@@ -73,19 +48,135 @@ async function openEditorWithFullViewport(captureDataUrl: string) {
       createdAt: Date.now(),
     };
     bitmap.close?.();
-    await storePending(image);
-    await chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
+    await openEditor(image);
   } catch (err) {
     console.error('[StaticShot] failed to open editor with full viewport:', err);
   }
 }
 
-chrome.runtime.onMessage.addListener((msg: BackgroundMessage, _sender, sendResponse) => {
+// ---- Full page: the tab scrolls, this worker captures each screen and stitches them
+
+type Tile = { y: number; dataUrl: string };
+type FullPageRun = { windowId: number; tiles: Tile[] };
+
+const runs = new Map<number, FullPageRun>();
+
+/** Chrome allows two captureVisibleTab calls a second */
+const CAPTURE_GAP_MS = 550;
+let lastCaptureAt = 0;
+
+/** One canvas holds at most this many pixels here; past it the image is scaled down */
+const MAX_PIXELS = 80_000_000;
+const MAX_SIDE = 32_767;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function captureNow(windowId: number): Promise<string> {
+  for (let attempt = 0; ; attempt++) {
+    const wait = lastCaptureAt + CAPTURE_GAP_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastCaptureAt = Date.now();
+    try {
+      return await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
+    } catch (err) {
+      const quota = String(err).includes('MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND');
+      if (!quota || attempt >= 2) throw err;
+    }
+  }
+}
+
+function setProgress(tabId: number, progress: number | null) {
+  const text = progress === null ? '' : `${Math.min(99, Math.round(progress * 100))}%`;
+  void chrome.action.setBadgeText({ tabId, text }).catch(() => {});
+  if (progress !== null) {
+    void chrome.action.setBadgeBackgroundColor({ tabId, color: '#0b63c5' }).catch(() => {});
+  }
+}
+
+async function captureTile(tabId: number, y: number, progress: number): Promise<TileReply> {
+  const run = runs.get(tabId);
+  if (!run) return { ok: false, reason: 'no capture in progress' };
+  // captureVisibleTab shoots whatever tab is in front: stop if you switched away
+  const tab = await chrome.tabs.get(tabId);
+  if (!tab.active) return { ok: false, reason: 'the tab is no longer in front' };
+  run.tiles.push({ y, dataUrl: await captureNow(run.windowId) });
+  setProgress(tabId, progress);
+  return { ok: true };
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function stitch(tiles: Tile[], layout: FullPageLayout): Promise<PendingImage> {
+  const { region, totalHeight } = layout;
+  const bitmaps = await Promise.all(
+    tiles.map(async (t) => createImageBitmap(await (await fetch(t.dataUrl)).blob())),
+  );
+  try {
+    // Device pixels per CSS pixel, from the shot itself (covers Retina and page zoom)
+    const shotScale = bitmaps[0].width / layout.viewportWidth;
+    const scale = Math.min(
+      shotScale,
+      MAX_SIDE / totalHeight,
+      MAX_SIDE / region.w,
+      Math.sqrt(MAX_PIXELS / (region.w * totalHeight)),
+    );
+    const canvas = new OffscreenCanvas(
+      Math.round(region.w * scale),
+      Math.round(totalHeight * scale),
+    );
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('2d context unavailable');
+    ctx.imageSmoothingQuality = 'high';
+    tiles.forEach((tile, i) => {
+      ctx.drawImage(
+        bitmaps[i],
+        region.x * shotScale,
+        region.y * shotScale,
+        region.w * shotScale,
+        region.h * shotScale,
+        0,
+        Math.round(tile.y * scale),
+        Math.round(region.w * scale),
+        Math.round(region.h * scale),
+      );
+    });
+    const blob = await canvas.convertToBlob({ type: 'image/png' });
+    return {
+      dataUrl: await blobToDataUrl(blob),
+      width: region.w,
+      height: totalHeight,
+      createdAt: Date.now(),
+    };
+  } finally {
+    bitmaps.forEach((b) => b.close?.());
+  }
+}
+
+async function finishFullPage(tabId: number, layout: FullPageLayout) {
+  const run = runs.get(tabId);
+  runs.delete(tabId);
+  try {
+    if (!run?.tiles.length) throw new Error('no screens were captured');
+    await openEditor(await stitch(run.tiles, layout));
+  } finally {
+    setProgress(tabId, null);
+  }
+}
+
+chrome.tabs.onRemoved.addListener((tabId) => runs.delete(tabId));
+
+chrome.runtime.onMessage.addListener((msg: BackgroundMessage, sender, sendResponse) => {
   if (msg.type === 'CROP_COMPLETE') {
     (async () => {
       try {
-        await storePending(msg.image);
-        await chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
+        await openEditor(msg.image);
         sendResponse({ ok: true });
       } catch (err) {
         console.error('[StaticShot] failed to open editor:', err);
@@ -94,5 +185,36 @@ chrome.runtime.onMessage.addListener((msg: BackgroundMessage, _sender, sendRespo
     })();
     return true; // keep the channel open for the async response
   }
-  return false;
+
+  const tabId = sender.tab?.id;
+  const windowId = sender.tab?.windowId;
+  if (tabId === undefined || windowId === undefined) return false;
+
+  switch (msg.type) {
+    case 'FULL_PAGE_START':
+      runs.set(tabId, { windowId, tiles: [] });
+      setProgress(tabId, 0);
+      sendResponse({ ok: true });
+      return false;
+    case 'FULL_PAGE_TILE':
+      captureTile(tabId, msg.y, msg.progress)
+        .then(sendResponse)
+        .catch((err) => sendResponse({ ok: false, reason: String(err) } satisfies TileReply));
+      return true;
+    case 'FULL_PAGE_FINISH':
+      finishFullPage(tabId, msg.layout)
+        .then(() => sendResponse({ ok: true }))
+        .catch((err) => {
+          console.error('[StaticShot] full-page stitch failed:', err);
+          sendResponse({ ok: false });
+        });
+      return true;
+    case 'FULL_PAGE_CANCEL':
+      runs.delete(tabId);
+      setProgress(tabId, null);
+      sendResponse({ ok: true });
+      return false;
+    default:
+      return false;
+  }
 });
